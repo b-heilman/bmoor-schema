@@ -1,36 +1,33 @@
-describe('bmoor-schema::Schema', function(){
-	var Schema = bmoorSchema.Schema;
+describe('bmoor-schema::schema', function(){
+	var encode = bmoorSchema.encode,
+		translate = bmoorSchema.translate;
 
-	it('should have been defined', function(){
-		expect( Schema ).toBeDefined();
-	});
-
-	it('should parse a basic object correctly', function(){
-		var schema = new Schema({
+	it('should encode a basic object correctly', function(){
+		var info = encode({
 				eins: 1,
 				zwei: true,
 				drei: 'hello'
 			});
 
-		expect( schema.info ).toEqual([
+		expect( info ).toEqual([
 			{
-				path: 'eins',
+				from: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				path: 'zwei',
+				from: 'zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				path: 'drei',
+				from: 'drei',
 				type: 'string',
 				sample: 'hello'
 			}
 		]);
 
-		expect( schema.toJsonSchema() ).toEqual({
+		expect( translate(info) ).toEqual({
 			type: 'object',
 			properties: {
 				eins: {
@@ -47,23 +44,49 @@ describe('bmoor-schema::Schema', function(){
 				}
 			}
 		});
+
+		info[0].to = 'test.eins';
+		info[1].to = 'test.zwei';
+
+		expect( translate(info) ).toEqual({
+			type: 'object',
+			properties: {
+				test: {
+					type: 'object',
+					properties: {
+						eins: {
+							alias: 'eins',
+							type: 'number'
+						},
+						zwei: {
+							alias: 'zwei',
+							type: 'boolean'
+						}
+					}
+				},
+				drei: {
+					alias: 'drei',
+					type: 'string'
+				}
+			}
+		});
 	});
 
-	it('should parse an array correctly', function(){
-		var schema = new Schema([
+	it('should encode an array correctly', function(){
+		var info = encode([
 				'hello',
 				'world'
 			]);
 
-		expect( schema.info ).toEqual([
+		expect( info ).toEqual([
 			{
-				path: '[]',
+				from: '[]',
 				type: 'string',
 				sample: 'hello'
 			}
 		]);
 
-		expect( schema.toJsonSchema() ).toEqual({
+		expect( translate(info) ).toEqual({
 			type: 'array',
 			items: {
 				alias: '[]',
@@ -72,8 +95,8 @@ describe('bmoor-schema::Schema', function(){
 		});
 	});
 
-	it('should parse a multi level object correctly', function(){
-		var schema = new Schema({
+	it('should encode a multi level object correctly', function(){
+		var info = encode({
 				eins: 1,
 				foo: {
 					zwei: true,
@@ -81,25 +104,25 @@ describe('bmoor-schema::Schema', function(){
 				}
 			});
 
-		expect( schema.info ).toEqual([
+		expect( info ).toEqual([
 			{
-				path: 'eins',
+				from: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				path: 'foo.zwei',
+				from: 'foo.zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				path: 'foo.drei',
+				from: 'foo.drei',
 				type: 'string',
 				sample: 'hello'
 			}
 		]);
 
-		expect( schema.toJsonSchema() ).toEqual({
+		expect( translate(info) ).toEqual({
 			type: 'object',
 			properties: {
 				eins: {
@@ -123,8 +146,8 @@ describe('bmoor-schema::Schema', function(){
 		});
 	});
 
-	it('should parse an array inside an object correctly', function(){
-		var schema = new Schema({
+	it('should encode an array inside an object correctly', function(){
+		var info = encode({
 				eins: 1,
 				foo: [{
 					zwei: true,
@@ -132,25 +155,25 @@ describe('bmoor-schema::Schema', function(){
 				}]
 			});
 
-		expect( schema.info ).toEqual([
+		expect( info ).toEqual([
 			{
-				path: 'eins',
+				from: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				path: 'foo[].zwei',
+				from: 'foo[]zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				path: 'foo[].drei',
+				from: 'foo[]drei',
 				type: 'string',
 				sample: 'hello'
 			}
 		]);
 
-		expect( schema.toJsonSchema() ).toEqual({
+		expect( translate(info) ).toEqual({
 			type: 'object',
 			properties: {
 				eins: {
@@ -163,11 +186,11 @@ describe('bmoor-schema::Schema', function(){
 						type: 'object',
 						properties: {
 							zwei: {
-								alias: 'foo[].zwei',
+								alias: 'foo[]zwei',
 								type: 'boolean'
 							},
 							drei: {
-								alias: 'foo[].drei',
+								alias: 'foo[]drei',
 								type: 'string'
 							}
 						}

@@ -57,8 +57,11 @@
 	'use strict';
 
 	module.exports = {
-		Schema: __webpack_require__(2),
-		parser: __webpack_require__(4)
+		encode: __webpack_require__(2),
+		validate: __webpack_require__(16),
+		translate: __webpack_require__(17),
+		Mapper: __webpack_require__(18),
+		Mapping: __webpack_require__(20)
 	};
 
 /***/ },
@@ -67,184 +70,93 @@
 
 	'use strict';
 
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var encode = __webpack_require__(3),
-	    parsing = __webpack_require__(4);
-
-	var Schema = function () {
-		function Schema(jsonObj) {
-			_classCallCheck(this, Schema);
-
-			var i = [];
-
-			parsing.$decode(i, '', jsonObj);
-
-			this.info = i;
-		}
-
-		_createClass(Schema, [{
-			key: 'toJsonSchema',
-			value: function toJsonSchema() {
-				return encode(this.info);
-			}
-		}]);
-
-		return Schema;
-	}();
-
-	module.exports = Schema;
-
-/***/ },
-/* 3 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	function go(path, root, info) {
-		var isArray = false,
-		    cur = path.shift();
-
-		if (cur[cur.length - 1] === ']') {
-			isArray = true;
-			cur = cur.substr(0, cur.length - 2);
-		}
-
-		if (isArray) {
-			if (cur === '') {
-				// don't think anything...
-			} else {
-				if (!root[cur]) {
-					root[cur] = {
-						type: 'array'
-					};
-				}
-				root = root[cur];
-			}
-			cur = 'items';
-		}
-
-		if (path.length) {
-			if (!root[cur]) {
-				root[cur] = {
-					type: 'object',
-					properties: {}
-				};
-			}
-			go(path, root[cur].properties, info);
-		} else {
-			root[cur] = info;
-		}
-	}
-
-	function encode(schema) {
-		var i, c, d, rtn, root;
-
-		if (schema[0].path.split('.')[0] === '[]') {
-			rtn = { type: 'array' };
-			root = rtn;
-		} else {
-			rtn = { type: 'object', properties: {} };
-			root = rtn.properties;
-		}
-
-		for (i = 0, c = schema.length; i < c; i++) {
-			d = schema[i];
-
-			go(d.path.split('.'), root, {
-				type: d.type,
-				alias: d.path
-			});
-		}
-
-		return rtn;
-	}
-
-	module.exports = encode;
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var bmoor = __webpack_require__(5);
+	var bmoor = __webpack_require__(3),
+	    ops;
 
-	module.exports = {
-		$decode: function $decode(def, path, val) {
-			var method;
+	function parse(def, path, val) {
+		var method;
 
-			if (bmoor.isArray(val)) {
-				method = 'array';
-			} else {
-				method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
-			}
+		if (bmoor.isArray(val)) {
+			method = 'array';
+		} else {
+			method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
+		}
 
-			this[method](def, path, val);
-		},
+		ops[method](def, path, val);
+	}
+
+	ops = {
 		array: function array(def, path, val) {
-			this.$decode(def, path + '[]', val[0]);
+			parse(def, path + '[]', val[0]);
 		},
 		object: function object(def, path, val) {
-			var _this = this;
-
-			if (path !== '') {
+			if (path.length && path.charAt(path.length - 1) !== ']') {
 				path += '.';
 			}
 
 			Object.keys(val).forEach(function (key) {
-				_this.$decode(def, path + key, val[key]);
+				parse(def, path + key, val[key]);
 			});
 		},
 		number: function number(def, path, val) {
 			def.push({
-				path: path,
+				from: path,
 				type: 'number',
 				sample: val
 			});
 		},
 		boolean: function boolean(def, path, val) {
 			def.push({
-				path: path,
+				from: path,
 				type: 'boolean',
 				sample: val
 			});
 		},
 		string: function string(def, path, val) {
 			def.push({
-				path: path,
+				from: path,
 				type: 'string',
 				sample: val
 			});
 		}
 	};
 
+	function encode(json) {
+		var t = [];
+
+		parse(t, '', json);
+
+		return t;
+	}
+
+	encode.$ops = ops;
+
+	module.exports = encode;
+
 /***/ },
-/* 5 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var bmoor = Object.create(__webpack_require__(6));
+	var bmoor = Object.create(__webpack_require__(4));
 
-	bmoor.dom = __webpack_require__(7);
-	bmoor.data = __webpack_require__(8);
-	bmoor.array = __webpack_require__(9);
-	bmoor.object = __webpack_require__(10);
-	bmoor.build = __webpack_require__(11);
-	bmoor.string = __webpack_require__(15);
-	bmoor.promise = __webpack_require__(16);
+	bmoor.dom = __webpack_require__(5);
+	bmoor.data = __webpack_require__(6);
+	bmoor.array = __webpack_require__(7);
+	bmoor.object = __webpack_require__(8);
+	bmoor.build = __webpack_require__(9);
+	bmoor.string = __webpack_require__(13);
+	bmoor.promise = __webpack_require__(14);
 
-	bmoor.Eventing = __webpack_require__(17);
+	bmoor.Eventing = __webpack_require__(15);
 
 	module.exports = bmoor;
 
 /***/ },
-/* 6 */
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -827,12 +739,12 @@
 	};
 
 /***/ },
-/* 7 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var bmoor = __webpack_require__(6),
+	var bmoor = __webpack_require__(4),
 	    regex = {};
 
 	function getReg(className) {
@@ -1127,7 +1039,7 @@
 	};
 
 /***/ },
-/* 8 */
+/* 6 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1167,7 +1079,7 @@
 	};
 
 /***/ },
-/* 9 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1177,7 +1089,7 @@
 	 * @module bmoor.array
 	 **/
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	/**
 	 * Search an array for an element, starting at the begining or a specified location
@@ -1419,7 +1331,7 @@
 	};
 
 /***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1431,7 +1343,7 @@
 	 * @module bmoor.object
 	 **/
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	function values(obj) {
 		var res = [];
@@ -1671,15 +1583,15 @@
 	};
 
 /***/ },
-/* 11 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var bmoor = __webpack_require__(6),
-	    mixin = __webpack_require__(12),
-	    plugin = __webpack_require__(13),
-	    decorate = __webpack_require__(14);
+	var bmoor = __webpack_require__(4),
+	    mixin = __webpack_require__(10),
+	    plugin = __webpack_require__(11),
+	    decorate = __webpack_require__(12);
 
 	function proc(action, proto, def) {
 		var i, c;
@@ -1734,12 +1646,12 @@
 	module.exports = maker;
 
 /***/ },
-/* 12 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	module.exports = function (to, from) {
 		bmoor.iterate(from, function (val, key) {
@@ -1748,14 +1660,14 @@
 	};
 
 /***/ },
-/* 13 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	function override(key, target, action, plugin) {
 		var old = target[key];
@@ -1804,14 +1716,14 @@
 	};
 
 /***/ },
-/* 14 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	function override(key, target, action) {
 		var old = target[key];
@@ -1849,12 +1761,12 @@
 	};
 
 /***/ },
-/* 15 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var bmoor = __webpack_require__(6);
+	var bmoor = __webpack_require__(4);
 
 	/**
 	 * Array helper functions
@@ -1922,6 +1834,11 @@
 			return function (num) {
 				return '$' + num;
 			};
+		},
+		url: function url() {
+			return function (param) {
+				return encodeURIComponent(param);
+			};
 		}
 	};
 
@@ -1930,12 +1847,16 @@
 
 		while (ters.length) {
 			command = ters.pop();
-			fn = filters[command.method].apply(null, command.args);
+			fn = filters[command.method];
 
-			if (filter) {
-				filter = stackFunctions(fn, filter);
-			} else {
-				filter = fn;
+			if (fn) {
+				fn = fn.apply(null, command.args);
+
+				if (filter) {
+					filter = stackFunctions(fn, filter);
+				} else {
+					filter = fn;
+				}
 			}
 		}
 
@@ -1973,7 +1894,11 @@
 				getter = bmoor.makeGetter(command);
 
 				if (commands.length) {
-					getter = stackFunctions(getter, doFilters(commands, getter));
+					commands = doFilters(commands, getter);
+
+					if (commands) {
+						getter = stackFunctions(getter, commands);
+					}
 				}
 			}
 
@@ -2033,7 +1958,7 @@
 	};
 
 /***/ },
-/* 16 */
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2048,7 +1973,7 @@
 	};
 
 /***/ },
-/* 17 */
+/* 15 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2123,6 +2048,310 @@
 	}();
 
 	module.exports = Eventing;
+
+/***/ },
+/* 16 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+/***/ },
+/* 17 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	function go(from, root, info) {
+		var isArray = false,
+		    cur = from.shift();
+
+		if (cur[cur.length - 1] === ']') {
+			isArray = true;
+			cur = cur.substr(0, cur.length - 2);
+		}
+
+		if (isArray) {
+			if (cur === '') {
+				// don't think anything...
+			} else {
+				if (!root[cur]) {
+					root[cur] = {
+						type: 'array'
+					};
+				}
+				root = root[cur];
+			}
+			cur = 'items';
+		}
+
+		if (from.length) {
+			if (!root[cur]) {
+				root[cur] = {
+					type: 'object',
+					properties: {}
+				};
+			}
+			go(from, root[cur].properties, info);
+		} else {
+			root[cur] = info;
+		}
+	}
+
+	function _(str) {
+		return str.replace(/]([^$])/g, '].$1').split('.');
+	}
+
+	function encode(schema) {
+		var i,
+		    c,
+		    d,
+		    rtn,
+		    root,
+		    path = schema[0].to || schema[0].from;
+
+		if (_(path)[0] === '[]') {
+			rtn = { type: 'array' };
+			root = rtn;
+		} else {
+			rtn = { type: 'object', properties: {} };
+			root = rtn.properties;
+		}
+
+		for (i = 0, c = schema.length; i < c; i++) {
+			d = schema[i];
+
+			path = d.to || d.from;
+			go(_(path), root, {
+				type: d.type,
+				alias: d.from
+			});
+		}
+
+		return rtn;
+	}
+
+	module.exports = encode;
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Path = __webpack_require__(19),
+	    bmoor = __webpack_require__(3),
+	    makeGetter = bmoor.makeGetter,
+	    makeSetter = bmoor.makeSetter,
+	    Mapping = __webpack_require__(20);
+
+	function stack(fn, old) {
+		if (old) {
+			return function (to, from, dex) {
+				old(to, from, dex);
+				fn(to, from, dex);
+			};
+		} else {
+			return fn;
+		}
+	}
+
+	// TODO : merging arrays
+
+	// converts one object structure to another
+
+	var Mapper = function () {
+		function Mapper(settings) {
+			var _this = this;
+
+			_classCallCheck(this, Mapper);
+
+			this.mappings = {};
+
+			if (settings) {
+				Object.keys(settings).forEach(function (to) {
+					var from = settings[to];
+
+					if (bmoor.isObject(from)) {
+						// so it's an object, parent is an array
+						if (from.to) {
+							to = from.to;
+						}
+
+						if (from.from) {
+							from = from.from;
+						} else {
+							throw new Error('I can not find a from clause');
+						}
+					}
+
+					_this.addMapping(to, from);
+				});
+			}
+		}
+
+		_createClass(Mapper, [{
+			key: 'addMapping',
+			value: function addMapping(to, from) {
+				if (from.indexOf('[]') === -1) {
+					this.addLinearMapping(to, from);
+				} else {
+					this.addArrayMapping(to, from);
+				}
+			}
+		}, {
+			key: 'addLinearMapping',
+			value: function addLinearMapping(toPath, fromPath) {
+				var pipe = new Mapping(toPath, fromPath).run;
+
+				// fn( to, from )
+				this.run = stack(pipe, this.run);
+			}
+		}, {
+			key: 'addArrayMapping',
+			value: function addArrayMapping(toPath, fromPath) {
+				var fn,
+				    arrGet,
+				    arrSet,
+				    arrCheck,
+				    valGet,
+				    to = new Path(toPath),
+				    from = new Path(fromPath),
+				    dex = to.path + '-' + from.path,
+				    child = this.mappings[dex];
+
+				if (!child) {
+					arrGet = makeGetter(from.path);
+					arrSet = makeSetter(to.path);
+					arrCheck = makeGetter(to.path);
+
+					// TODO : what if you want to map multiple objects
+					// onto the same array?
+					if (to.remainder === '') {
+						// straight insertion
+						valGet = makeGetter(from.remainder);
+
+						fn = function fn(to, fromObj) {
+							var v = valGet(fromObj);
+
+							to.push(v);
+						};
+					} else {
+						// more complex object down there
+						child = this.mappings[dex] = new Mapper();
+
+						fn = function fn(arrTo, fromObj) {
+							var t;
+
+							if (to.remainder.charAt(0) === '[') {
+								if (to.remainder.charAt(1) === 'm') {
+									// this means merge
+									t = arrTo;
+								} else {
+									t = [];
+								}
+							} else {
+								t = {};
+							}
+
+							if (arrTo !== t) {
+								arrTo.push(t);
+							}
+
+							child.run(t, fromObj);
+						};
+					}
+
+					this.run = stack(function (to, from) {
+						var i, c, fromArr, toArr;
+
+						// does an array already exist there?
+						toArr = arrCheck(to);
+						if (!toArr) {
+							toArr = [];
+							arrSet(to, toArr);
+						}
+
+						fromArr = arrGet(from);
+
+						for (i = 0, c = fromArr.length; i < c; i++) {
+							fn(toArr, fromArr[i]);
+						}
+					}, this.run);
+				}
+
+				if (child) {
+					child.addMapping(to.remainder, from.remainder);
+				}
+			}
+		}]);
+
+		return Mapper;
+	}();
+
+	module.exports = Mapper;
+
+/***/ },
+/* 19 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Path =
+	// normal path: foo.bar
+	// array path : foo[]bar
+	function Path(path) {
+		_classCallCheck(this, Path);
+
+		var end,
+		    dex = path.indexOf('[');
+
+		if (dex === -1) {
+			// normal path
+			this.path = path;
+		} else {
+			end = path.indexOf(']', dex);
+
+			this.hasArray = true;
+			this.op = path.substring(dex + 1, end);
+			this.path = path.substr(0, dex);
+			this.remainder = path.substr(end + 1);
+		}
+	};
+
+	module.exports = Path;
+
+/***/ },
+/* 20 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var bmoor = __webpack_require__(3),
+	    makeGetter = bmoor.makeGetter,
+	    makeSetter = bmoor.makeSetter;
+
+	var Mapping = function Mapping(toPath, fromPath) {
+		_classCallCheck(this, Mapping);
+
+		var getFrom = makeGetter(fromPath),
+		    setTo = makeSetter(toPath);
+
+		this.get = getFrom;
+		this.set = setTo;
+		this.run = function (to, from) {
+			setTo(to, getFrom(from));
+		};
+	};
+
+	module.exports = Mapping;
 
 /***/ }
 /******/ ]);

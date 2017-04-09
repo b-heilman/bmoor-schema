@@ -1,63 +1,62 @@
-function go( path, root, info ){
-	var isArray = false,
-		cur = path.shift();
+var bmoor = require('bmoor'),
+	ops;
 
-	if ( cur[cur.length-1] === ']' ){
-		isArray = true;
-		cur = cur.substr( 0, cur.length - 2 );
-	}
+function parse( def, path, val ){
+	var method;
 
-	if ( isArray ){
-		if ( cur === '' ){
-			// don't think anything...
-		}else{
-			if ( !root[cur] ){
-				root[cur] = {
-					type: 'array'
-				};
-			}
-			root = root[cur];
-		}
-		cur = 'items';
-	}
-
-	if ( path.length ){
-		if ( !root[cur] ){
-			root[cur] = {
-				type: 'object',
-				properties: {}
-			};
-		}
-		go( path, root[cur].properties, info );
+	if ( bmoor.isArray(val) ){
+		method = 'array';
 	}else{
-		root[ cur ] = info;
+		method = typeof(val);
 	}
+
+	ops[method]( def, path, val );
 }
 
-function encode( schema ){
-	var i, c,
-		d,
-		rtn,
-		root;
+ops = {
+	array: function( def, path, val ){
+		parse( def, path+'[]', val[0] );
+	},
+	object: function( def, path, val ){
+		if ( path.length && path.charAt(path.length-1) !== ']' ){
+			path += '.';
+		}
 
-	if ( schema[0].path.split('.')[0] === '[]' ){
-		rtn = { type: 'array' };
-		root = rtn;
-	}else{
-		rtn = { type: 'object', properties: {} };
-		root = rtn.properties;
-	}
-
-	for( i = 0, c = schema.length; i < c; i++ ){
-		d = schema[i];
-
-		go( d.path.split('.'), root, {
-			type: d.type,
-			alias: d.path
+		Object.keys(val).forEach( function( key ){
+			parse( def, path+key, val[key]);
+		});
+	},
+	number: function( def, path, val ){
+		def.push({
+			from: path,
+			type: 'number',
+			sample: val
+		});
+	},
+	boolean: function( def, path, val ){
+		def.push({
+			from: path,
+			type: 'boolean',
+			sample: val
+		});
+	},
+	string: function( def, path, val ){
+		def.push({
+			from: path,
+			type: 'string',
+			sample: val
 		});
 	}
+};
 
-	return rtn;
+function encode( json ){
+	var t = [];
+
+	parse( t, '', json );
+
+	return t;
 }
+
+encode.$ops = ops;
 
 module.exports = encode;
