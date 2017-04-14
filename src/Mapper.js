@@ -1,7 +1,6 @@
 var Path = require('./Path.js'),
 	bmoor = require('bmoor'),
 	makeGetter = bmoor.makeGetter,
-	makeSetter = bmoor.makeSetter,
 	Mapping = require('./Mapping.js');
 
 function stack( fn, old ){
@@ -23,6 +22,7 @@ class Mapper {
 	constructor( settings ){
 		this.mappings = {};
 
+		// this.run is defined via recursive stacks
 		if ( settings ){
 			Object.keys( settings ).forEach( ( to ) => {
 				var from = settings[to];
@@ -46,7 +46,7 @@ class Mapper {
 	}
 
 	addMapping( to, from ){
-		if ( from.indexOf('[]') === -1 ){
+		if ( from.indexOf('[') === -1 ){
 			this.addLinearMapping( to, from );
 		}else{
 			this.addArrayMapping( to, from );
@@ -62,30 +62,20 @@ class Mapper {
 
 	addArrayMapping( toPath, fromPath ){
 		var fn,
-			arrGet,
-			arrSet,
-			arrCheck,
 			valGet,
-			to = new Path(toPath),
-			from = new Path(fromPath),
+			to = new Path( toPath, {get:true,set:true} ),
+			from = new Path( fromPath, {get:true} ),
 			dex = to.path+'-'+from.path,
 			child = this.mappings[ dex ];
 
 		if ( !child ){
-			arrGet = makeGetter( from.path );
-			arrSet = makeSetter( to.path );
-			arrCheck = makeGetter( to.path );
-
-			// TODO : what if you want to map multiple objects
-			// onto the same array?
+			// so the path ended with []
 			if ( to.remainder === '' ){
 				// straight insertion
 				valGet = makeGetter( from.remainder );
 				
 				fn = function( to, fromObj ){
-					var v = valGet(fromObj);
-
-					to.push( v );
+					to.push( valGet(fromObj) );
 				};
 			}else{
 				// more complex object down there
@@ -113,19 +103,19 @@ class Mapper {
 				};
 			}
 
-			this.run = stack( function( to, from ){
+			this.run = stack( function( t, f ){
 				var i, c,
 					fromArr,
 					toArr;
 
 				// does an array already exist there?
-				toArr = arrCheck( to );
+				toArr = to.get( t );
 				if ( !toArr ){
 					toArr = [];
-					arrSet( to, toArr );
+					to.set( t, toArr );
 				}
 
-				fromArr = arrGet(from);
+				fromArr = from.get(f);
 
 				for( i = 0, c = fromArr.length; i < c; i++ ){
 					fn( toArr, fromArr[i] );

@@ -1,13 +1,9 @@
 function go( from, root, info ){
-	var isArray = false,
-		cur = from.shift();
+	var cur = from.shift();
 
 	if ( cur[cur.length-1] === ']' ){
-		isArray = true;
 		cur = cur.substr( 0, cur.length - 2 );
-	}
-
-	if ( isArray ){
+	
 		if ( cur === '' ){
 			// don't think anything...
 		}else{
@@ -34,7 +30,7 @@ function go( from, root, info ){
 	}
 }
 
-function _( str ){
+function split( str ){
 	return str.replace(/]([^$])/g,'].$1').split('.');
 }
 
@@ -45,7 +41,7 @@ function encode( schema ){
 		root,
 		path = schema[0].to || schema[0].from;
 
-	if ( _(path)[0] === '[]' ){
+	if ( split(path)[0] === '[]' ){
 		rtn = { type: 'array' };
 		root = rtn;
 	}else{
@@ -57,10 +53,12 @@ function encode( schema ){
 		d = schema[i];
 
 		path = d.to || d.from;
-		go( _(path), root, {
-			type: d.type,
-			alias: d.from
-		});
+		go( split(path), root, 
+			{
+				type: d.type,
+				alias: d.from
+			}
+		);
 	}
 
 	return rtn;
