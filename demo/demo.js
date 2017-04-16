@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -50,24 +50,24 @@
 
 	console.log('We are running speed tests');
 
-/***/ },
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	module.exports = {
 		encode: __webpack_require__(2),
-		Mapper: __webpack_require__(16),
-		Mapping: __webpack_require__(18),
-		Path: __webpack_require__(17),
-		translate: __webpack_require__(19),
-		validate: __webpack_require__(20)
+		Mapper: __webpack_require__(17),
+		Mapping: __webpack_require__(19),
+		Path: __webpack_require__(18),
+		translate: __webpack_require__(20),
+		validate: __webpack_require__(21)
 	};
 
-/***/ },
+/***/ }),
 /* 2 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -136,9 +136,9 @@
 
 	module.exports = encode;
 
-/***/ },
+/***/ }),
 /* 3 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -147,18 +147,19 @@
 	bmoor.dom = __webpack_require__(5);
 	bmoor.data = __webpack_require__(6);
 	bmoor.array = __webpack_require__(7);
-	bmoor.object = __webpack_require__(8);
-	bmoor.build = __webpack_require__(9);
+	bmoor.build = __webpack_require__(8);
+	bmoor.object = __webpack_require__(12);
 	bmoor.string = __webpack_require__(13);
 	bmoor.promise = __webpack_require__(14);
 
-	bmoor.Eventing = __webpack_require__(15);
+	bmoor.Memory = __webpack_require__(15);
+	bmoor.Eventing = __webpack_require__(16);
 
 	module.exports = bmoor;
 
-/***/ },
+/***/ }),
 /* 4 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -301,15 +302,15 @@
 		return true;
 	}
 
-	function parse(space) {
-		if (!space) {
+	function parse(path) {
+		if (!path) {
 			return [];
-		} else if (isString(space)) {
-			return space.split('.'); // turn strings into an array
-		} else if (isArray(space)) {
-			return space.slice(0);
+		} else if (isString(path)) {
+			return path.split('.');
+		} else if (isArray(path)) {
+			return path.slice(0);
 		} else {
-			return space;
+			throw new Error('unable to parse path: ' + path + ' : ' + (typeof path === 'undefined' ? 'undefined' : _typeof(path)));
 		}
 	}
 
@@ -330,24 +331,22 @@
 		    nextSpace,
 		    curSpace = root;
 
-		if (isString(space)) {
-			space = space.split('.');
+		space = parse(space);
 
-			val = space.pop();
+		val = space.pop();
 
-			for (i = 0, c = space.length; i < c; i++) {
-				nextSpace = space[i];
+		for (i = 0, c = space.length; i < c; i++) {
+			nextSpace = space[i];
 
-				if (isUndefined(curSpace[nextSpace])) {
-					curSpace[nextSpace] = {};
-				}
-
-				curSpace = curSpace[nextSpace];
+			if (isUndefined(curSpace[nextSpace])) {
+				curSpace[nextSpace] = {};
 			}
 
-			old = curSpace[val];
-			curSpace[val] = value;
+			curSpace = curSpace[nextSpace];
 		}
+
+		old = curSpace[val];
+		curSpace[val] = value;
 
 		return old;
 	}
@@ -375,7 +374,7 @@
 	function makeSetter(space) {
 		var i,
 		    fn,
-		    readings = space.split('.');
+		    readings = parse(space);
 
 		for (i = readings.length - 1; i > -1; i--) {
 			fn = _makeSetter(readings[i], fn);
@@ -392,31 +391,27 @@
 	 * @param {string|array|function} space The namespace
 	 * @return {array}
 	 **/
-	function get(root, space) {
+	function get(root, path) {
 		var i,
 		    c,
-		    curSpace = root,
-		    nextSpace;
+		    space,
+		    nextSpace,
+		    curSpace = root;
 
-		if (isString(space)) {
-			if (space.length) {
-				space = space.split('.');
+		space = parse(path);
+		if (space.length) {
+			for (i = 0, c = space.length; i < c; i++) {
+				nextSpace = space[i];
 
-				for (i = 0, c = space.length; i < c; i++) {
-					nextSpace = space[i];
-
-					if (isUndefined(curSpace[nextSpace])) {
-						return;
-					}
-
-					curSpace = curSpace[nextSpace];
+				if (isUndefined(curSpace[nextSpace])) {
+					return;
 				}
-			}
 
-			return curSpace;
-		} else {
-			throw new Error('unsupported type: ' + space);
+				curSpace = curSpace[nextSpace];
+			}
 		}
+
+		return curSpace;
 	}
 
 	function _makeGetter(property, next) {
@@ -439,12 +434,12 @@
 		}
 	}
 
-	function makeGetter(space) {
-		var i, fn;
+	function makeGetter(path) {
+		var i,
+		    fn,
+		    space = parse(path);
 
 		if (space.length) {
-			space = space.split('.');
-
 			for (i = space.length - 1; i > -1; i--) {
 				fn = _makeGetter(space[i], fn);
 			}
@@ -455,119 +450,6 @@
 		}
 
 		return fn;
-	}
-
-	function exec(root, space, args, ctx) {
-		var i,
-		    c,
-		    last,
-		    nextSpace,
-		    curSpace = root;
-
-		if (isString(space)) {
-			if (space.length) {
-				space = space.split('.');
-
-				for (i = 0, c = space.length; i < c; i++) {
-					nextSpace = space[i];
-
-					if (isUndefined(curSpace[nextSpace])) {
-						return;
-					}
-
-					last = curSpace;
-					curSpace = curSpace[nextSpace];
-				}
-			}
-
-			if (curSpace) {
-				return curSpace.apply(ctx || last, args || []);
-			}
-		}
-
-		throw new Error('unsupported eval: ' + space);
-	}
-
-	function _makeExec(property, next) {
-		if (next) {
-			return function (obj, args, ctx) {
-				try {
-					return next(obj[property], args, ctx);
-				} catch (ex) {
-					return undefined;
-				}
-			};
-		} else {
-			return function (obj, args, ctx) {
-				return obj[property].apply(ctx || obj, args || []);
-			};
-		}
-	}
-
-	function makeExec(space) {
-		var i, fn;
-
-		if (space.length) {
-			space = space.split('.');
-
-			fn = _makeExec(space[space.length - 1]);
-
-			for (i = space.length - 2; i > -1; i--) {
-				fn = _makeExec(space[i], fn);
-			}
-		} else {
-			throw new Error('unsupported eval: ' + space);
-		}
-
-		return fn;
-	}
-
-	function load(root, space) {
-		var i, c, arr, res;
-
-		space = space.split('[]');
-		if (space.length === 1) {
-			return [get(root, space[0])];
-		} else {
-			arr = get(root, space[0]);
-			res = [];
-
-			if (arr) {
-				for (i = 0, c = arr.length; i < c; i++) {
-					res.push(get(arr[i], space[1]));
-				}
-			}
-
-			return res;
-		}
-	}
-
-	function makeLoader(space) {
-		var getArray, getVariable;
-
-		space = space.split('[]');
-
-		if (space.length === 1) {
-			return [makeGetter(space[0])];
-		} else {
-			getArray = makeGetter(space[0]);
-			getVariable = makeGetter(space[1]);
-
-			return function (obj) {
-				var i,
-				    c,
-				    arr = getArray(obj),
-				    res = [];
-
-				if (arr) {
-					for (i = 0, c = arr.length; i < c; i++) {
-						res.push(getVariable(arr[i]));
-					}
-				}
-
-				return res;
-			};
-		}
 	}
 
 	/**
@@ -726,10 +608,6 @@
 		makeSetter: makeSetter,
 		get: get,
 		makeGetter: makeGetter,
-		exec: exec,
-		makeExec: makeExec,
-		load: load,
-		makeLoader: makeLoader,
 		del: del,
 		// controls
 		loop: loop,
@@ -739,9 +617,9 @@
 		naked: naked
 	};
 
-/***/ },
+/***/ }),
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1039,9 +917,9 @@
 		bringForward: bringForward
 	};
 
-/***/ },
+/***/ }),
 /* 6 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -1079,9 +957,9 @@
 		getUid: getUid
 	};
 
-/***/ },
+/***/ }),
 /* 7 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1331,9 +1209,187 @@
 		compare: compare
 	};
 
-/***/ },
+/***/ }),
 /* 8 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var bmoor = __webpack_require__(4),
+	    mixin = __webpack_require__(9),
+	    plugin = __webpack_require__(10),
+	    decorate = __webpack_require__(11);
+
+	function proc(action, proto, def) {
+		var i, c;
+
+		if (bmoor.isArray(def)) {
+			for (i = 0, c = def.length; i < c; i++) {
+				action(proto, def[i]);
+			}
+		} else {
+			action(proto, def);
+		}
+	}
+
+	function maker(root, config, base) {
+		if (!base) {
+			base = function BmoorPrototype() {};
+
+			if (config) {
+				if (bmoor.isFunction(root)) {
+					base = function BmoorPrototype() {
+						root.apply(this, arguments);
+					};
+
+					base.prototype = Object.create(root.prototype);
+				} else {
+					base.prototype = Object.create(root);
+				}
+			} else {
+				config = root;
+			}
+		}
+
+		if (config.mixin) {
+			proc(mixin, base.prototype, config.mixin);
+		}
+
+		if (config.decorate) {
+			proc(decorate, base.prototype, config.decorate);
+		}
+
+		if (config.plugin) {
+			proc(plugin, base.prototype, config.plugin);
+		}
+
+		return base;
+	}
+
+	maker.mixin = mixin;
+	maker.decorate = decorate;
+	maker.plugin = plugin;
+
+	module.exports = maker;
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var bmoor = __webpack_require__(4);
+
+	module.exports = function (to, from) {
+		bmoor.iterate(from, function (val, key) {
+			to[key] = val;
+		});
+	};
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var bmoor = __webpack_require__(4);
+
+	function override(key, target, action, plugin) {
+		var old = target[key];
+
+		if (old === undefined) {
+			if (bmoor.isFunction(action)) {
+				target[key] = function () {
+					return action.apply(plugin, arguments);
+				};
+			} else {
+				target[key] = action;
+			}
+		} else {
+			if (bmoor.isFunction(action)) {
+				if (bmoor.isFunction(old)) {
+					target[key] = function () {
+						var backup = plugin.$old,
+						    reference = plugin.$target,
+						    rtn;
+
+						plugin.$target = target;
+						plugin.$old = function () {
+							return old.apply(target, arguments);
+						};
+
+						rtn = action.apply(plugin, arguments);
+
+						plugin.$old = backup;
+						plugin.$target = reference;
+
+						return rtn;
+					};
+				} else {
+					console.log('attempting to plug-n-play ' + key + ' an instance of ' + (typeof old === 'undefined' ? 'undefined' : _typeof(old)));
+				}
+			} else {
+				console.log('attempting to plug-n-play with ' + key + ' and instance of ' + (typeof action === 'undefined' ? 'undefined' : _typeof(action)));
+			}
+		}
+	}
+
+	module.exports = function (to, from, ctx) {
+		bmoor.iterate(from, function (val, key) {
+			override(key, to, val, ctx);
+		});
+	};
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var bmoor = __webpack_require__(4);
+
+	function override(key, target, action) {
+		var old = target[key];
+
+		if (old === undefined) {
+			target[key] = action;
+		} else {
+			if (bmoor.isFunction(action)) {
+				if (bmoor.isFunction(old)) {
+					target[key] = function () {
+						var backup = this.$old,
+						    rtn;
+
+						this.$old = old;
+
+						rtn = action.apply(this, arguments);
+
+						this.$old = backup;
+
+						return rtn;
+					};
+				} else {
+					console.log('attempting to decorate ' + key + ' an instance of ' + (typeof old === 'undefined' ? 'undefined' : _typeof(old)));
+				}
+			} else {
+				console.log('attempting to decorate with ' + key + ' and instance of ' + (typeof action === 'undefined' ? 'undefined' : _typeof(action)));
+			}
+		}
+	}
+
+	module.exports = function (to, from) {
+		bmoor.iterate(from, function (val, key) {
+			override(key, to, val);
+		});
+	};
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1583,187 +1639,9 @@
 		equals: equals
 	};
 
-/***/ },
-/* 9 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var bmoor = __webpack_require__(4),
-	    mixin = __webpack_require__(10),
-	    plugin = __webpack_require__(11),
-	    decorate = __webpack_require__(12);
-
-	function proc(action, proto, def) {
-		var i, c;
-
-		if (bmoor.isArray(def)) {
-			for (i = 0, c = def.length; i < c; i++) {
-				action(proto, def[i]);
-			}
-		} else {
-			action(proto, def);
-		}
-	}
-
-	function maker(root, config, base) {
-		if (!base) {
-			base = function BmoorPrototype() {};
-
-			if (config) {
-				if (bmoor.isFunction(root)) {
-					base = function BmoorPrototype() {
-						root.apply(this, arguments);
-					};
-
-					base.prototype = Object.create(root.prototype);
-				} else {
-					base.prototype = Object.create(root);
-				}
-			} else {
-				config = root;
-			}
-		}
-
-		if (config.mixin) {
-			proc(mixin, base.prototype, config.mixin);
-		}
-
-		if (config.decorate) {
-			proc(decorate, base.prototype, config.decorate);
-		}
-
-		if (config.plugin) {
-			proc(plugin, base.prototype, config.plugin);
-		}
-
-		return base;
-	}
-
-	maker.mixin = mixin;
-	maker.decorate = decorate;
-	maker.plugin = plugin;
-
-	module.exports = maker;
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var bmoor = __webpack_require__(4);
-
-	module.exports = function (to, from) {
-		bmoor.iterate(from, function (val, key) {
-			to[key] = val;
-		});
-	};
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	var bmoor = __webpack_require__(4);
-
-	function override(key, target, action, plugin) {
-		var old = target[key];
-
-		if (old === undefined) {
-			if (bmoor.isFunction(action)) {
-				target[key] = function () {
-					return action.apply(plugin, arguments);
-				};
-			} else {
-				target[key] = action;
-			}
-		} else {
-			if (bmoor.isFunction(action)) {
-				if (bmoor.isFunction(old)) {
-					target[key] = function () {
-						var backup = plugin.$old,
-						    reference = plugin.$target,
-						    rtn;
-
-						plugin.$target = target;
-						plugin.$old = function () {
-							return old.apply(target, arguments);
-						};
-
-						rtn = action.apply(plugin, arguments);
-
-						plugin.$old = backup;
-						plugin.$target = reference;
-
-						return rtn;
-					};
-				} else {
-					console.log('attempting to plug-n-play ' + key + ' an instance of ' + (typeof old === 'undefined' ? 'undefined' : _typeof(old)));
-				}
-			} else {
-				console.log('attempting to plug-n-play with ' + key + ' and instance of ' + (typeof action === 'undefined' ? 'undefined' : _typeof(action)));
-			}
-		}
-	}
-
-	module.exports = function (to, from, ctx) {
-		bmoor.iterate(from, function (val, key) {
-			override(key, to, val, ctx);
-		});
-	};
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	var bmoor = __webpack_require__(4);
-
-	function override(key, target, action) {
-		var old = target[key];
-
-		if (old === undefined) {
-			target[key] = action;
-		} else {
-			if (bmoor.isFunction(action)) {
-				if (bmoor.isFunction(old)) {
-					target[key] = function () {
-						var backup = this.$old,
-						    rtn;
-
-						this.$old = old;
-
-						rtn = action.apply(this, arguments);
-
-						this.$old = backup;
-
-						return rtn;
-					};
-				} else {
-					console.log('attempting to decorate ' + key + ' an instance of ' + (typeof old === 'undefined' ? 'undefined' : _typeof(old)));
-				}
-			} else {
-				console.log('attempting to decorate with ' + key + ' and instance of ' + (typeof action === 'undefined' ? 'undefined' : _typeof(action)));
-			}
-		}
-	}
-
-	module.exports = function (to, from) {
-		bmoor.iterate(from, function (val, key) {
-			override(key, to, val);
-		});
-	};
-
-/***/ },
+/***/ }),
 /* 13 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1958,9 +1836,9 @@
 		getFormatter: getFormatter
 	};
 
-/***/ },
+/***/ }),
 /* 14 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -1973,9 +1851,52 @@
 		always: always
 	};
 
-/***/ },
+/***/ }),
 /* 15 */
-/***/ function(module, exports) {
+/***/ (function(module, exports) {
+
+	'use strict';
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var master = {};
+
+	var Memory = function Memory(title) {
+		_classCallCheck(this, Memory);
+
+		var index = {};
+
+		this.register = function (name, obj) {
+			if (index[name]) {
+				throw new Error('Memory - ' + title + ' already has ' + name);
+			} else {
+				index[name] = obj;
+			}
+		};
+
+		this.check = function (name) {
+			return index[name];
+		};
+	};
+
+	module.exports = {
+		Memory: Memory,
+		use: function use(title) {
+			var rtn = master[title];
+
+			if (rtn) {
+				throw new Error('Memory already exists ' + title);
+			} else {
+				rtn = master[title] = new Memory(title);
+			}
+
+			return rtn;
+		}
+	};
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports) {
 
 	"use strict";
 
@@ -2027,20 +1948,32 @@
 		}, {
 			key: "trigger",
 			value: function trigger(event) {
-				var i,
-				    c,
-				    listeners,
-				    args = Array.prototype.slice.call(arguments, 1);
+				var _this = this;
 
-				if (this._listeners) {
-					listeners = this._listeners[event];
+				var args = Array.prototype.slice.call(arguments, 1);
 
-					if (listeners) {
-						listeners = listeners.slice(0);
-						for (i = 0, c = listeners.length; i < c; i++) {
-							listeners[i].apply(this, args);
-						}
+				if (this._listeners && this._listeners[event]) {
+					if (!this._triggering) {
+						this._triggering = {};
+						// I want to do this to enforce more async / promise style
+						setTimeout(function () {
+							Object.keys(_this._triggering).forEach(function (event) {
+								var vars = _this._triggering[event];
+
+								_this._listeners[event].forEach(function (cb) {
+									cb.apply(_this, vars);
+								});
+							});
+
+							if (_this._listeners.stable) {
+								_this._listeners.stable.forEach(function (cb) {
+									cb.apply(_this);
+								});
+							}
+						}, 0);
 					}
+
+					this._triggering[event] = args;
 				}
 			}
 		}]);
@@ -2050,9 +1983,9 @@
 
 	module.exports = Eventing;
 
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 17 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2060,10 +1993,10 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Path = __webpack_require__(17),
+	var Path = __webpack_require__(18),
 	    bmoor = __webpack_require__(3),
 	    makeGetter = bmoor.makeGetter,
-	    Mapping = __webpack_require__(18);
+	    Mapping = __webpack_require__(19);
 
 	function stack(fn, old) {
 		if (old) {
@@ -2202,9 +2135,9 @@
 
 	module.exports = Mapper;
 
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2273,9 +2206,9 @@
 
 	module.exports = Path;
 
-/***/ },
-/* 18 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2300,9 +2233,9 @@
 
 	module.exports = Mapping;
 
-/***/ },
-/* 19 */
-/***/ function(module, exports) {
+/***/ }),
+/* 20 */
+/***/ (function(module, exports) {
 
 	'use strict';
 
@@ -2373,15 +2306,15 @@
 
 	module.exports = encode;
 
-/***/ },
-/* 20 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ }),
+/* 21 */
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var Path = __webpack_require__(17);
+	var Path = __webpack_require__(18);
 
 	var tests = [function (def, v, errors) {
 		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== def.type) {
@@ -2416,5 +2349,5 @@
 
 	module.exports = validate;
 
-/***/ }
+/***/ })
 /******/ ]);
