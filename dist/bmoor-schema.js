@@ -153,14 +153,13 @@ var bmoorSchema =
 
 	var Path = __webpack_require__(5),
 	    bmoor = __webpack_require__(3),
-	    makeGetter = bmoor.makeGetter,
 	    Mapping = __webpack_require__(6);
 
 	function stack(fn, old) {
 		if (old) {
-			return function (to, from, dex) {
-				old(to, from, dex);
-				fn(to, from, dex);
+			return function (to, from) {
+				old(to, from);
+				fn(to, from);
 			};
 		} else {
 			return fn;
@@ -204,86 +203,19 @@ var bmoorSchema =
 
 		_createClass(Mapper, [{
 			key: 'addMapping',
-			value: function addMapping(to, from) {
-				if (from.indexOf('[') === -1) {
-					this.addLinearMapping(to, from);
+			value: function addMapping(toPath, fromPath) {
+				var to = new Path(toPath),
+				    from = new Path(fromPath),
+				    dex = to.leading + '-' + from.leading,
+				    mapping = this.mappings[dex];
+
+				if (mapping) {
+					mapping.addChild(to.remainder, from.remainder);
 				} else {
-					this.addArrayMapping(to, from);
-				}
-			}
-		}, {
-			key: 'addLinearMapping',
-			value: function addLinearMapping(toPath, fromPath) {
-				var pipe = new Mapping(toPath, fromPath).run;
+					mapping = new Mapping(to, from);
+					this.mappings[dex] = mapping;
 
-				// fn( to, from )
-				this.run = stack(pipe, this.run);
-			}
-		}, {
-			key: 'addArrayMapping',
-			value: function addArrayMapping(toPath, fromPath) {
-				var fn,
-				    valGet,
-				    to = new Path(toPath, { get: true, set: true }),
-				    from = new Path(fromPath, { get: true }),
-				    dex = to.path + '-' + from.path,
-				    child = this.mappings[dex];
-
-				if (!child) {
-					// so the path ended with []
-					if (to.remainder === '') {
-						// straight insertion
-						valGet = makeGetter(from.remainder);
-
-						fn = function fn(to, fromObj) {
-							to.push(valGet(fromObj));
-						};
-					} else {
-						// more complex object down there
-						child = this.mappings[dex] = new Mapper();
-
-						fn = function fn(arrTo, fromObj) {
-							var t;
-
-							if (to.remainder.charAt(0) === '[') {
-								if (to.remainder.charAt(1) === 'm') {
-									// this means merge
-									t = arrTo;
-								} else {
-									t = [];
-								}
-							} else {
-								t = {};
-							}
-
-							if (arrTo !== t) {
-								arrTo.push(t);
-							}
-
-							child.run(t, fromObj);
-						};
-					}
-
-					this.run = stack(function (t, f) {
-						var i, c, fromArr, toArr;
-
-						// does an array already exist there?
-						toArr = to.get(t);
-						if (!toArr) {
-							toArr = [];
-							to.set(t, toArr);
-						}
-
-						fromArr = from.get(f);
-
-						for (i = 0, c = fromArr.length; i < c; i++) {
-							fn(toArr, fromArr[i]);
-						}
-					}, this.run);
-				}
-
-				if (child) {
-					child.addMapping(to.remainder, from.remainder);
+					this.go = stack(mapping.go, this.go);
 				}
 			}
 		}]);
@@ -314,22 +246,43 @@ var bmoorSchema =
 			_classCallCheck(this, Path);
 
 			var end,
-			    dex = path.indexOf('[');
+			    dex = path.indexOf('['),
+			    args;
+
+			this.raw = path;
 
 			if (dex === -1) {
-				// normal path
-				this.path = path;
+				this.type = 'linear';
 			} else {
+				this.type = 'array';
+
 				end = path.indexOf(']', dex);
+				this.remainder = path.substr(end + 1);
 
 				this.op = path.substring(dex + 1, end);
-				this.path = path.substr(0, dex);
-				this.remainder = path.substr(end + 1);
+				args = this.op.indexOf(':');
+
+				if (args === -1) {
+					this.args = '';
+				} else {
+					this.args = this.op.substr(args + 1);
+					this.op = this.op.substring(0, args);
+				}
+
+				path = path.substr(0, dex);
+			}
+
+			this.leading = path;
+
+			if (path === '') {
+				this.path = [];
+			} else {
+				this.path = path.split('.');
+				this.set = makeSetter(this.path);
 			}
 
 			// if we want to, we can optimize path performance
 			this.get = makeGetter(this.path);
-			this.set = makeSetter(this.path);
 		}
 
 		_createClass(Path, [{
@@ -370,24 +323,171 @@ var bmoorSchema =
 
 	'use strict';
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var bmoor = __webpack_require__(3),
-	    makeGetter = bmoor.makeGetter,
-	    makeSetter = bmoor.makeSetter;
+	var Path = __webpack_require__(5);
 
-	var Mapping = function Mapping(toPath, fromPath) {
-		_classCallCheck(this, Mapping);
+	var arrayMethods = {
+		'': function _(next) {
+			return function (toObj, fromObj) {
+				var i, c, dex, t;
 
-		var getFrom = makeGetter(fromPath),
-		    setTo = makeSetter(toPath);
+				for (i = 0, c = fromObj.length; i < c; i++) {
+					t = {};
+					dex = toObj.length;
 
-		this.get = getFrom;
-		this.set = setTo;
-		this.run = function (to, from) {
-			setTo(to, getFrom(from));
-		};
+					toObj.push(t);
+
+					next(t, fromObj[i], toObj, dex);
+				}
+			};
+		},
+		'merge': function merge(next) {
+			return function (toObj, fromObj, toRoot, toVar) {
+				var i, c, dex, t;
+
+				if (fromObj.length) {
+					next(toObj, fromObj[0], toRoot, toVar);
+
+					for (i = 1, c = fromObj.length; i < c; i++) {
+						t = {};
+						dex = toRoot.length;
+
+						toRoot.push(t);
+
+						next(t, fromObj[i], toRoot, dex);
+					}
+				}
+			};
+		},
+		'first': function first(next) {
+			return function (toObj, fromObj, toRoot, toVar) {
+				var t = {};
+
+				toRoot[toVar] = t;
+
+				next(t, fromObj[0], toRoot, toVar);
+			};
+		},
+		'last': function last(next) {
+			return function (toObj, fromObj, toRoot, toVar) {
+				var t = {};
+
+				toRoot[toVar] = t;
+
+				next(t, fromObj[fromObj.length - 1], toRoot, toVar);
+			};
+		},
+		'pick': function pick(next, args) {
+			return function (toObj, fromObj, toRoot, toVar) {
+				var t = {},
+				    dex = parseInt(args, 10);
+
+				toRoot[toVar] = t;
+
+				next(t, fromObj[dex], toRoot, toVar);
+			};
+		}
 	};
+
+	function buildArrayMap(to, from, next) {
+		var fn = arrayMethods[to.op](next, to.args);
+
+		if (to.path.length) {
+			return function (toObj, fromObj) {
+				var t = [],
+				    parent = to.set(toObj, t);
+
+				fn(t, from.get(fromObj), parent, to.path[to.path.length - 1]);
+			};
+		} else {
+			return function (toObj, fromObj, toRoot, toVar) {
+				var t = [],
+				    myRoot;
+
+				if (toRoot) {
+					t = [];
+					toRoot[toVar] = t;
+					myRoot = toRoot;
+				} else {
+					// this must be when an array leads
+					myRoot = t = toObj;
+				}
+
+				fn(t, from.get(fromObj), myRoot, toVar);
+			};
+		}
+	}
+
+	function stackChildren(old, fn) {
+		if (old) {
+			return function (toObj, fromObj, toRoot, toVar) {
+				fn(toObj, fromObj, toRoot, toVar);
+				old(toObj, fromObj, toRoot, toVar);
+			};
+		} else {
+			return fn;
+		}
+	}
+
+	var Mapping = function () {
+		function Mapping(toPath, fromPath) {
+			var _this = this;
+
+			_classCallCheck(this, Mapping);
+
+			var to = toPath instanceof Path ? toPath : new Path(toPath),
+			    from = fromPath instanceof Path ? fromPath : new Path(fromPath);
+
+			this.chidren = {};
+
+			if (to.type === 'linear' && from.type === to.type) {
+				if (to.path.length) {
+					this.go = function (toObj, fromObj) {
+						to.set(toObj, from.get(fromObj));
+					};
+				} else if (from.path.length) {
+					this.go = function (ignore, fromObj, toRoot, i) {
+						toRoot[i] = from.get(fromObj);
+					};
+				} else {
+					this.go = function (ignore, value, toRoot, i) {
+						toRoot[i] = value;
+					};
+				}
+			} else if (to.type === 'array' && from.type === to.type) {
+				this.addChild(to.remainder, from.remainder);
+				this.go = buildArrayMap(to, from, function (toObj, fromObj, toRoot, toVar) {
+					_this.callChildren(toObj, fromObj, toRoot, toVar);
+				});
+			} else {
+				throw new Error('both paths needs same amount of array hooks');
+			}
+		}
+
+		_createClass(Mapping, [{
+			key: 'addChild',
+			value: function addChild(toPath, fromPath) {
+				var child,
+				    to = new Path(toPath),
+				    from = new Path(fromPath),
+				    dex = to.leading + '-' + from.leading;
+
+				child = this.chidren[dex];
+
+				if (child) {
+					child.addChild(to.remainder, from.remainder);
+				} else {
+					child = new Mapping(to, from);
+					this.callChildren = stackChildren(this.callChildren, child.go);
+				}
+			}
+		}]);
+
+		return Mapping;
+	}();
 
 	module.exports = Mapping;
 

@@ -1,13 +1,12 @@
 var Path = require('./Path.js'),
 	bmoor = require('bmoor'),
-	makeGetter = bmoor.makeGetter,
 	Mapping = require('./Mapping.js');
 
 function stack( fn, old ){
 	if ( old ){
-		return function( to, from, dex ){
-			old( to, from, dex );
-			fn( to, from, dex );
+		return function( to, from ){
+			old( to, from );
+			fn( to, from );
 		};
 	}else{
 		return fn;
@@ -45,86 +44,19 @@ class Mapper {
 		}
 	}
 
-	addMapping( to, from ){
-		if ( from.indexOf('[') === -1 ){
-			this.addLinearMapping( to, from );
+	addMapping( toPath, fromPath ){
+		var to = new Path( toPath ),
+			from = new Path( fromPath ),
+			dex = to.leading + '-' + from.leading,
+			mapping = this.mappings[dex]; 
+
+		if ( mapping ){
+			mapping.addChild( to.remainder, from.remainder );
 		}else{
-			this.addArrayMapping( to, from );
-		}
-	}
+			mapping = new Mapping( to, from );
+			this.mappings[ dex ] = mapping;
 
-	addLinearMapping( toPath, fromPath ){
-		var pipe = ( new Mapping(toPath,fromPath) ).run;
-
-		// fn( to, from )
-		this.run = stack( pipe, this.run );
-	}
-
-	addArrayMapping( toPath, fromPath ){
-		var fn,
-			valGet,
-			to = new Path( toPath, {get:true,set:true} ),
-			from = new Path( fromPath, {get:true} ),
-			dex = to.path+'-'+from.path,
-			child = this.mappings[ dex ];
-
-		if ( !child ){
-			// so the path ended with []
-			if ( to.remainder === '' ){
-				// straight insertion
-				valGet = makeGetter( from.remainder );
-				
-				fn = function( to, fromObj ){
-					to.push( valGet(fromObj) );
-				};
-			}else{
-				// more complex object down there
-				child = this.mappings[ dex ] = new Mapper();
-
-				fn = function( arrTo, fromObj ){
-					var t;
-
-					if ( to.remainder.charAt(0) === '[' ){
-						if ( to.remainder.charAt(1) === 'm' ){
-							// this means merge
-							t = arrTo;
-						}else{
-							t = [];
-						}
-					}else{
-						t = {};
-					}
-
-					if ( arrTo !== t ){
-						arrTo.push( t );
-					}
-
-					child.run( t, fromObj );
-				};
-			}
-
-			this.run = stack( function( t, f ){
-				var i, c,
-					fromArr,
-					toArr;
-
-				// does an array already exist there?
-				toArr = to.get( t );
-				if ( !toArr ){
-					toArr = [];
-					to.set( t, toArr );
-				}
-
-				fromArr = from.get(f);
-
-				for( i = 0, c = fromArr.length; i < c; i++ ){
-					fn( toArr, fromArr[i] );
-				}
-			}, this.run );
-		}
-
-		if ( child ){
-			child.addMapping( to.remainder, from.remainder );
+			this.go = stack( mapping.go, this.go );
 		}
 	}
 }

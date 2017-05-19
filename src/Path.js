@@ -7,22 +7,43 @@ class Path {
 	// array path : foo[]bar
 	constructor( path ){
 		var end,
-			dex = path.indexOf('[');
+			dex = path.indexOf('['),
+			args;
+
+		this.raw = path;
 
 		if ( dex === -1 ){
-			// normal path
-			this.path = path;
+			this.type = 'linear';
 		}else{
+			this.type = 'array';
+
 			end = path.indexOf( ']', dex );
+			this.remainder = path.substr( end + 1 );
 
 			this.op = path.substring( dex+1, end );
-			this.path = path.substr( 0, dex );
-			this.remainder = path.substr( end + 1 );
+			args = this.op.indexOf(':');
+
+			if ( args === -1 ){
+				this.args = '';
+			}else{
+				this.args = this.op.substr( args+1 );
+				this.op = this.op.substring( 0, args );
+			}
+
+			path = path.substr( 0, dex );
+		}
+
+		this.leading = path;
+
+		if ( path === '' ){
+			this.path = [];
+		}else{
+			this.path = path.split('.');
+			this.set = makeSetter( this.path );
 		}
 
 		// if we want to, we can optimize path performance
 		this.get = makeGetter( this.path );
-		this.set = makeSetter( this.path );
 	}
 
 	flatten( obj ){

@@ -16,7 +16,7 @@ describe('bmoor-schema.Mapper', function(){
 				zwei: 2
 			};
 
-		mapper.run( to, from );
+		mapper.go( to, from );
 
 		expect( to.foo ).toBe( 1 );
 		expect( to.eins ).toBe( 2 );
@@ -33,7 +33,7 @@ describe('bmoor-schema.Mapper', function(){
 				zwei: 2
 			};
 
-		mapper.run( to, from );
+		mapper.go( to, from );
 
 		expect( to.foo ).toBe( 1 );
 		expect( to.eins ).toBe( 2 );
@@ -50,7 +50,7 @@ describe('bmoor-schema.Mapper', function(){
 		mapper.addMapping( 'foo', 'bar' );
 		mapper.addMapping( 'eins', 'zwei' );
 
-		mapper.run( to, from );
+		mapper.go( to, from );
 
 		expect( to.foo ).toBe( 1 );
 		expect( to.eins ).toBe( 2 );
@@ -70,7 +70,7 @@ describe('bmoor-schema.Mapper', function(){
 			mapper.addMapping( 'eins', 'foo.bar' );
 			mapper.addMapping( 'zwei', 'foo.hello' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.eins ).toBe( 1 );
 			expect( to.zwei ).toBe( 2 );
@@ -87,7 +87,7 @@ describe('bmoor-schema.Mapper', function(){
 			mapper.addMapping( 'foo.eins', 'foo' );
 			mapper.addMapping( 'foo.zwei', 'bar' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo.eins ).toBe( 1 );
 			expect( to.foo.zwei ).toBe( 2 );
@@ -105,7 +105,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'bar', 'foo' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.bar.eins ).toBe( 1 );
 			expect( to.bar.zwei ).toBe( 2 );
@@ -125,7 +125,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'foo[]', 'test[]' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				'hello',
@@ -145,7 +145,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'foo[]value', 'test[]' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				{value:'hello'},
@@ -165,7 +165,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'foo[]', 'test[]value' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				'hello',
@@ -186,7 +186,7 @@ describe('bmoor-schema.Mapper', function(){
 			mapper.addMapping( 'foo[]bar', 'test[]foo' );
 			mapper.addMapping( 'foo[]hello.world', 'test[]doop' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				{ 
@@ -226,7 +226,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'foo[]bar[]', 'test[]foo[]bar' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				{ 
@@ -266,7 +266,7 @@ describe('bmoor-schema.Mapper', function(){
 
 			mapper.addMapping( 'foo[][]', 'test[]foo[]bar' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([
 				[ 1, 2 ],
@@ -294,9 +294,9 @@ describe('bmoor-schema.Mapper', function(){
 					]
 				};
 
-			mapper.addMapping( 'foo[][m]', 'test[]foo[]bar' );
+			mapper.addMapping( 'foo[][merge]', 'test[]foo[]bar' );
 
-			mapper.run( to, from );
+			mapper.go( to, from );
 
 			expect( to.foo ).toEqual([ 1, 2, 3, 4 ]);
 		});
@@ -322,7 +322,7 @@ describe('bmoor-schema.Mapper', function(){
 
 				mapper.addMapping( '[][]', '[]foo[]bar' );
 
-				mapper.run( to, from );
+				mapper.go( to, from );
 
 				expect( to ).toEqual([
 					[ 1, 2 ],
@@ -350,9 +350,9 @@ describe('bmoor-schema.Mapper', function(){
 						]
 					};
 
-				mapper.addMapping( '[][m]', 'test[]foo[]bar' );
+				mapper.addMapping( '[][merge]', 'test[]foo[]bar' );
 
-				mapper.run( to, from );
+				mapper.go( to, from );
 
 				expect( to ).toEqual([ 1, 2, 3, 4 ]);
 			});
