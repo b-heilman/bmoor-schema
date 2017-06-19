@@ -18,10 +18,15 @@ class Path {
 			this.type = 'array';
 
 			end = path.indexOf( ']', dex );
-			this.remainder = path.substr( end + 1 );
 
 			this.op = path.substring( dex+1, end );
 			args = this.op.indexOf(':');
+
+			if ( path.charAt(end+1) === '.' ){
+				end++;
+			}
+
+			this.remainder = path.substr( end + 1 );
 
 			if ( args === -1 ){
 				this.args = '';

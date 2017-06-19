@@ -43,15 +43,15 @@ var bmoorSchema =
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	module.exports = __webpack_require__(1);
 
-/***/ }),
+/***/ },
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -64,9 +64,9 @@ var bmoorSchema =
 		validate: __webpack_require__(8)
 	};
 
-/***/ }),
+/***/ },
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -89,10 +89,12 @@ var bmoorSchema =
 
 	ops = {
 		array: function array(def, path, val) {
-			parse(def, path + '[]', val[0]);
+			var next = val[0];
+
+			parse(def, path + '[]', next);
 		},
 		object: function object(def, path, val) {
-			if (path.length && path.charAt(path.length - 1) !== ']') {
+			if (path.length) {
 				path += '.';
 			}
 
@@ -102,21 +104,21 @@ var bmoorSchema =
 		},
 		number: function number(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'number',
 				sample: val
 			});
 		},
 		boolean: function boolean(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'boolean',
 				sample: val
 			});
 		},
 		string: function string(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'string',
 				sample: val
 			});
@@ -126,24 +128,28 @@ var bmoorSchema =
 	function encode(json) {
 		var t = [];
 
-		parse(t, '', json);
+		if (json) {
+			parse(t, '', json);
 
-		return t;
+			return t;
+		} else {
+			return json;
+		}
 	}
 
 	encode.$ops = ops;
 
 	module.exports = encode;
 
-/***/ }),
+/***/ },
 /* 3 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = bmoor;
 
-/***/ }),
+/***/ },
 /* 4 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -225,9 +231,9 @@ var bmoorSchema =
 
 	module.exports = Mapper;
 
-/***/ }),
+/***/ },
 /* 5 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -257,10 +263,15 @@ var bmoorSchema =
 				this.type = 'array';
 
 				end = path.indexOf(']', dex);
-				this.remainder = path.substr(end + 1);
 
 				this.op = path.substring(dex + 1, end);
 				args = this.op.indexOf(':');
+
+				if (path.charAt(end + 1) === '.') {
+					end++;
+				}
+
+				this.remainder = path.substr(end + 1);
 
 				if (args === -1) {
 					this.args = '';
@@ -317,9 +328,9 @@ var bmoorSchema =
 
 	module.exports = Path;
 
-/***/ }),
+/***/ },
 /* 6 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -329,21 +340,24 @@ var bmoorSchema =
 
 	var Path = __webpack_require__(5);
 
+	function all(next) {
+		return function (toObj, fromObj) {
+			var i, c, dex, t;
+
+			for (i = 0, c = fromObj.length; i < c; i++) {
+				t = {};
+				dex = toObj.length;
+
+				toObj.push(t);
+
+				next(t, fromObj[i], toObj, dex);
+			}
+		};
+	}
+
 	var arrayMethods = {
-		'': function _(next) {
-			return function (toObj, fromObj) {
-				var i, c, dex, t;
-
-				for (i = 0, c = fromObj.length; i < c; i++) {
-					t = {};
-					dex = toObj.length;
-
-					toObj.push(t);
-
-					next(t, fromObj[i], toObj, dex);
-				}
-			};
-		},
+		'': all,
+		'*': all,
 		'merge': function merge(next) {
 			return function (toObj, fromObj, toRoot, toVar) {
 				var i, c, dex, t;
@@ -491,9 +505,9 @@ var bmoorSchema =
 
 	module.exports = Mapping;
 
-/***/ }),
+/***/ },
 /* 7 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	'use strict';
 
@@ -530,16 +544,17 @@ var bmoorSchema =
 	}
 
 	function split(str) {
-		return str.replace(/]([^$])/g, '].$1').split('.');
+		return str.replace(/]([^\.$])/g, '].$1').split('.');
 	}
 
 	function encode(schema) {
 		var i,
 		    c,
 		    d,
+		    t,
 		    rtn,
 		    root,
-		    path = schema[0].to || schema[0].from;
+		    path = schema[0].to || schema[0].path;
 
 		if (split(path)[0] === '[]') {
 			rtn = { type: 'array' };
@@ -552,11 +567,15 @@ var bmoorSchema =
 		for (i = 0, c = schema.length; i < c; i++) {
 			d = schema[i];
 
-			path = d.to || d.from;
-			go(split(path), root, {
-				type: d.type,
-				alias: d.from
-			});
+			path = d.to || d.path;
+
+			t = { type: d.type };
+
+			if (d.from) {
+				t.alias = d.from;
+			}
+
+			go(split(path), root, t);
 		}
 
 		return rtn;
@@ -564,9 +583,9 @@ var bmoorSchema =
 
 	module.exports = encode;
 
-/***/ }),
+/***/ },
 /* 8 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -607,5 +626,5 @@ var bmoorSchema =
 
 	module.exports = validate;
 
-/***/ })
+/***/ }
 /******/ ]);

@@ -11,17 +11,17 @@ describe('bmoor-schema::schema', function(){
 
 		expect( info ).toEqual([
 			{
-				from: 'eins',
+				path: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				from: 'zwei',
+				path: 'zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				from: 'drei',
+				path: 'drei',
 				type: 'string',
 				sample: 'hello'
 			}
@@ -31,22 +31,25 @@ describe('bmoor-schema::schema', function(){
 			type: 'object',
 			properties: {
 				eins: {
-					alias: 'eins',
 					type: 'number'
 				},
 				zwei: {
-					alias: 'zwei',
 					type: 'boolean'
 				},
 				drei: {
-					alias: 'drei',
 					type: 'string'
 				}
 			}
 		});
 
 		info[0].to = 'test.eins';
+		info[0].from = 'test.eins_o';
+
 		info[1].to = 'test.zwei';
+		info[1].from = 'test.zwei_o';
+
+		info[2].to = 'drei';
+		info[2].from = 'foo.bar';
 
 		expect( translate(info) ).toEqual({
 			type: 'object',
@@ -55,17 +58,17 @@ describe('bmoor-schema::schema', function(){
 					type: 'object',
 					properties: {
 						eins: {
-							alias: 'eins',
+							alias: 'test.eins_o',
 							type: 'number'
 						},
 						zwei: {
-							alias: 'zwei',
+							alias: 'test.zwei_o',
 							type: 'boolean'
 						}
 					}
 				},
 				drei: {
-					alias: 'drei',
+					alias: 'foo.bar',
 					type: 'string'
 				}
 			}
@@ -80,7 +83,7 @@ describe('bmoor-schema::schema', function(){
 
 		expect( info ).toEqual([
 			{
-				from: '[]',
+				path: '[]',
 				type: 'string',
 				sample: 'hello'
 			}
@@ -89,7 +92,6 @@ describe('bmoor-schema::schema', function(){
 		expect( translate(info) ).toEqual({
 			type: 'array',
 			items: {
-				alias: '[]',
 				type: 'string'
 			}
 		});
@@ -106,17 +108,17 @@ describe('bmoor-schema::schema', function(){
 
 		expect( info ).toEqual([
 			{
-				from: 'eins',
+				path: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				from: 'foo.zwei',
+				path: 'foo.zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				from: 'foo.drei',
+				path: 'foo.drei',
 				type: 'string',
 				sample: 'hello'
 			}
@@ -126,18 +128,15 @@ describe('bmoor-schema::schema', function(){
 			type: 'object',
 			properties: {
 				eins: {
-					alias: 'eins',
 					type: 'number'
 				},
 				foo: {
 					type: 'object',
 					properties: {
 						zwei: {
-							alias: 'foo.zwei',
 							type: 'boolean'
 						},
 						drei: {
-							alias: 'foo.drei',
 							type: 'string'
 						}
 					}
@@ -157,17 +156,17 @@ describe('bmoor-schema::schema', function(){
 
 		expect( info ).toEqual([
 			{
-				from: 'eins',
+				path: 'eins',
 				type: 'number',
 				sample: 1
 			},
 			{
-				from: 'foo[]zwei',
+				path: 'foo[].zwei',
 				type: 'boolean',
 				sample: true
 			},
 			{
-				from: 'foo[]drei',
+				path: 'foo[].drei',
 				type: 'string',
 				sample: 'hello'
 			}
@@ -177,7 +176,6 @@ describe('bmoor-schema::schema', function(){
 			type: 'object',
 			properties: {
 				eins: {
-					alias: 'eins',
 					type: 'number'
 				},
 				foo: {
@@ -186,11 +184,9 @@ describe('bmoor-schema::schema', function(){
 						type: 'object',
 						properties: {
 							zwei: {
-								alias: 'foo[]zwei',
 								type: 'boolean'
 							},
 							drei: {
-								alias: 'foo[]drei',
 								type: 'string'
 							}
 						}

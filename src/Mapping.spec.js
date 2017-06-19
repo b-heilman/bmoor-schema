@@ -20,10 +20,10 @@ describe('bmoor-schema.Mapper', function(){
 		expect( to.eins ).toBe( 2 );
 	});
 
-	it('should icorrectly process an array', function(){
+	it('should correctly process an array', function(){
 		var mapping = new Mapping(
 				'eins[]one',
-				'zwei[]two'
+				'zwei[].two'
 			),
 			to = {},
 			from = {
@@ -39,7 +39,7 @@ describe('bmoor-schema.Mapper', function(){
 
 	it('should correctly process a multi value array', function(){
 		var mapping = new Mapping(
-				'eins[]one',
+				'eins[].one',
 				'zwei[]two'
 			),
 			to = {},
@@ -100,7 +100,7 @@ describe('bmoor-schema.Mapper', function(){
 
 	it('should correctly process multi tiered array with properties', function(){
 		var mapping = new Mapping(
-				'eins[]foo[]bar',
+				'eins[].foo[]bar',
 				'zwei[][]'
 			),
 			to = {},
@@ -149,7 +149,7 @@ describe('bmoor-schema.Mapper', function(){
 
 		it('should allow picking last', function(){
 			var mapping = new Mapping(
-					'eins[last]value',
+					'eins[last].value',
 					'zwei[]two'
 				),
 				to = {},
@@ -167,8 +167,8 @@ describe('bmoor-schema.Mapper', function(){
 
 		it('should allow picking [n] element', function(){
 			var mapping = new Mapping(
-					'eins[pick:1]value',
-					'zwei[]two'
+					'eins[pick:1].value',
+					'zwei[].two'
 				),
 				to = {},
 				from = {
@@ -187,7 +187,7 @@ describe('bmoor-schema.Mapper', function(){
 		it('should allow merging', function(){
 			var mapping = new Mapping(
 					'eins[][merge]',
-					'zwei[][]two'
+					'zwei[][].two'
 				),
 				to = {},
 				from = {

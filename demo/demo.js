@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -50,9 +50,9 @@
 
 	console.log('We are running speed tests');
 
-/***/ }),
+/***/ },
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -65,9 +65,9 @@
 		validate: __webpack_require__(21)
 	};
 
-/***/ }),
+/***/ },
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -90,10 +90,12 @@
 
 	ops = {
 		array: function array(def, path, val) {
-			parse(def, path + '[]', val[0]);
+			var next = val[0];
+
+			parse(def, path + '[]', next);
 		},
 		object: function object(def, path, val) {
-			if (path.length && path.charAt(path.length - 1) !== ']') {
+			if (path.length) {
 				path += '.';
 			}
 
@@ -103,21 +105,21 @@
 		},
 		number: function number(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'number',
 				sample: val
 			});
 		},
 		boolean: function boolean(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'boolean',
 				sample: val
 			});
 		},
 		string: function string(def, path, val) {
 			def.push({
-				from: path,
+				path: path,
 				type: 'string',
 				sample: val
 			});
@@ -127,18 +129,22 @@
 	function encode(json) {
 		var t = [];
 
-		parse(t, '', json);
+		if (json) {
+			parse(t, '', json);
 
-		return t;
+			return t;
+		} else {
+			return json;
+		}
 	}
 
 	encode.$ops = ops;
 
 	module.exports = encode;
 
-/***/ }),
+/***/ },
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -157,9 +163,9 @@
 
 	module.exports = bmoor;
 
-/***/ }),
+/***/ },
 /* 4 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	'use strict';
 
@@ -614,9 +620,9 @@
 		naked: naked
 	};
 
-/***/ }),
+/***/ },
 /* 5 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -914,9 +920,9 @@
 		bringForward: bringForward
 	};
 
-/***/ }),
+/***/ },
 /* 6 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	"use strict";
 
@@ -954,9 +960,9 @@
 		getUid: getUid
 	};
 
-/***/ }),
+/***/ },
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1206,9 +1212,9 @@
 		compare: compare
 	};
 
-/***/ }),
+/***/ },
 /* 8 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1269,9 +1275,9 @@
 
 	module.exports = maker;
 
-/***/ }),
+/***/ },
 /* 9 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1283,9 +1289,9 @@
 		});
 	};
 
-/***/ }),
+/***/ },
 /* 10 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1339,9 +1345,9 @@
 		});
 	};
 
-/***/ }),
+/***/ },
 /* 11 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1384,9 +1390,9 @@
 		});
 	};
 
-/***/ }),
+/***/ },
 /* 12 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1636,9 +1642,9 @@
 		equals: equals
 	};
 
-/***/ }),
+/***/ },
 /* 13 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -1833,9 +1839,9 @@
 		getFormatter: getFormatter
 	};
 
-/***/ }),
+/***/ },
 /* 14 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	"use strict";
 
@@ -1848,9 +1854,9 @@
 		always: always
 	};
 
-/***/ }),
+/***/ },
 /* 15 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	'use strict';
 
@@ -1893,9 +1899,9 @@
 		}
 	};
 
-/***/ }),
+/***/ },
 /* 16 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	"use strict";
 
@@ -1913,17 +1919,41 @@
 		_createClass(Eventing, [{
 			key: "on",
 			value: function on(event, cb) {
-				var dis = this;
+				var listeners;
 
 				if (!this._listeners[event]) {
 					this._listeners[event] = [];
 				}
 
-				this._listeners[event].push(cb);
+				listeners = this._listeners[event];
+
+				listeners.push(cb);
 
 				return function clear$on() {
-					dis._listeners[event].splice(dis._listeners[event].indexOf(cb), 1);
+					listeners.splice(listeners.indexOf(cb), 1);
 				};
+			}
+		}, {
+			key: "once",
+			value: function once(event, cb) {
+				var clear,
+				    fn = function fn() {
+					cb.apply(this, arguments);
+					clear();
+				};
+
+				clear = this.on(event, fn);
+
+				return clear;
+			}
+		}, {
+			key: "next",
+			value: function next(event, cb) {
+				if (this._triggering && this._triggering[event]) {
+					this.once(event, cb);
+				} else {
+					cb();
+				}
 			}
 		}, {
 			key: "subscribe",
@@ -1954,6 +1984,7 @@
 				if (this.hasWaiting(event)) {
 					if (!this._triggering) {
 						this._triggering = {};
+
 						// I want to do this to enforce more async / promise style
 						setTimeout(function () {
 							var events = _this._triggering;
@@ -1963,16 +1994,10 @@
 							Object.keys(events).forEach(function (event) {
 								var vars = events[event];
 
-								_this._listeners[event].forEach(function (cb) {
+								_this._listeners[event].slice(0).forEach(function (cb) {
 									cb.apply(_this, vars);
 								});
 							});
-
-							if (!_this._triggering && _this._listeners.stable) {
-								_this._listeners.stable.forEach(function (cb) {
-									cb.apply(_this);
-								});
-							}
 						}, 0);
 					}
 
@@ -1991,9 +2016,9 @@
 
 	module.exports = Eventing;
 
-/***/ }),
+/***/ },
 /* 17 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2075,9 +2100,9 @@
 
 	module.exports = Mapper;
 
-/***/ }),
+/***/ },
 /* 18 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2107,10 +2132,15 @@
 				this.type = 'array';
 
 				end = path.indexOf(']', dex);
-				this.remainder = path.substr(end + 1);
 
 				this.op = path.substring(dex + 1, end);
 				args = this.op.indexOf(':');
+
+				if (path.charAt(end + 1) === '.') {
+					end++;
+				}
+
+				this.remainder = path.substr(end + 1);
 
 				if (args === -1) {
 					this.args = '';
@@ -2167,9 +2197,9 @@
 
 	module.exports = Path;
 
-/***/ }),
+/***/ },
 /* 19 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2179,21 +2209,24 @@
 
 	var Path = __webpack_require__(18);
 
+	function all(next) {
+		return function (toObj, fromObj) {
+			var i, c, dex, t;
+
+			for (i = 0, c = fromObj.length; i < c; i++) {
+				t = {};
+				dex = toObj.length;
+
+				toObj.push(t);
+
+				next(t, fromObj[i], toObj, dex);
+			}
+		};
+	}
+
 	var arrayMethods = {
-		'': function _(next) {
-			return function (toObj, fromObj) {
-				var i, c, dex, t;
-
-				for (i = 0, c = fromObj.length; i < c; i++) {
-					t = {};
-					dex = toObj.length;
-
-					toObj.push(t);
-
-					next(t, fromObj[i], toObj, dex);
-				}
-			};
-		},
+		'': all,
+		'*': all,
 		'merge': function merge(next) {
 			return function (toObj, fromObj, toRoot, toVar) {
 				var i, c, dex, t;
@@ -2341,9 +2374,9 @@
 
 	module.exports = Mapping;
 
-/***/ }),
+/***/ },
 /* 20 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	'use strict';
 
@@ -2380,16 +2413,17 @@
 	}
 
 	function split(str) {
-		return str.replace(/]([^$])/g, '].$1').split('.');
+		return str.replace(/]([^\.$])/g, '].$1').split('.');
 	}
 
 	function encode(schema) {
 		var i,
 		    c,
 		    d,
+		    t,
 		    rtn,
 		    root,
-		    path = schema[0].to || schema[0].from;
+		    path = schema[0].to || schema[0].path;
 
 		if (split(path)[0] === '[]') {
 			rtn = { type: 'array' };
@@ -2402,11 +2436,15 @@
 		for (i = 0, c = schema.length; i < c; i++) {
 			d = schema[i];
 
-			path = d.to || d.from;
-			go(split(path), root, {
-				type: d.type,
-				alias: d.from
-			});
+			path = d.to || d.path;
+
+			t = { type: d.type };
+
+			if (d.from) {
+				t.alias = d.from;
+			}
+
+			go(split(path), root, t);
 		}
 
 		return rtn;
@@ -2414,9 +2452,9 @@
 
 	module.exports = encode;
 
-/***/ }),
+/***/ },
 /* 21 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -2457,5 +2495,5 @@
 
 	module.exports = validate;
 
-/***/ })
+/***/ }
 /******/ ]);

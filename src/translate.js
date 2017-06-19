@@ -31,15 +31,16 @@ function go( from, root, info ){
 }
 
 function split( str ){
-	return str.replace(/]([^$])/g,'].$1').split('.');
+	return str.replace(/]([^\.$])/g,'].$1').split('.');
 }
 
 function encode( schema ){
 	var i, c,
 		d,
+		t,
 		rtn,
 		root,
-		path = schema[0].to || schema[0].from;
+		path = schema[0].to || schema[0].path;
 
 	if ( split(path)[0] === '[]' ){
 		rtn = { type: 'array' };
@@ -52,13 +53,15 @@ function encode( schema ){
 	for( i = 0, c = schema.length; i < c; i++ ){
 		d = schema[i];
 
-		path = d.to || d.from;
-		go( split(path), root, 
-			{
-				type: d.type,
-				alias: d.from
-			}
-		);
+		path = d.to || d.path;
+
+		t = { type: d.type };
+
+		if ( d.from ){
+			t.alias = d.from;
+		}
+
+		go( split(path), root, t );
 	}
 
 	return rtn;

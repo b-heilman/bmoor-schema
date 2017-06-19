@@ -1,22 +1,25 @@
 var Path = require('./Path.js');
 
+function all( next ){
+	return function( toObj, fromObj ){
+		var i, c,
+			dex,
+			t;
+
+		for( i = 0, c = fromObj.length; i < c; i++ ){
+			t = {};
+			dex = toObj.length;
+
+			toObj.push(t);
+			
+			next( t, fromObj[i], toObj, dex );
+		}
+	};
+}
+
 var arrayMethods = {
-	'': function( next ){
-		return function( toObj, fromObj ){
-			var i, c,
-				dex,
-				t;
-
-			for( i = 0, c = fromObj.length; i < c; i++ ){
-				t = {};
-				dex = toObj.length;
-
-				toObj.push(t);
-				
-				next( t, fromObj[i], toObj, dex );
-			}
-		};
-	},
+	'': all,
+	'*': all,
 	'merge': function( next ){
 		return function( toObj, fromObj, toRoot, toVar ){
 			var i, c,

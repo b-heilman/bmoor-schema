@@ -15,34 +15,36 @@ function parse( def, path, val ){
 
 ops = {
 	array: function( def, path, val ){
-		parse( def, path+'[]', val[0] );
+		var next = val[0];
+
+		parse( def, path+'[]', next );
 	},
 	object: function( def, path, val ){
-		if ( path.length && path.charAt(path.length-1) !== ']' ){
+		if ( path.length ){
 			path += '.';
 		}
-
+		
 		Object.keys(val).forEach( function( key ){
 			parse( def, path+key, val[key]);
 		});
 	},
 	number: function( def, path, val ){
 		def.push({
-			from: path,
+			path: path,
 			type: 'number',
 			sample: val
 		});
 	},
 	boolean: function( def, path, val ){
 		def.push({
-			from: path,
+			path: path,
 			type: 'boolean',
 			sample: val
 		});
 	},
 	string: function( def, path, val ){
 		def.push({
-			from: path,
+			path: path,
 			type: 'string',
 			sample: val
 		});
@@ -52,9 +54,13 @@ ops = {
 function encode( json ){
 	var t = [];
 
-	parse( t, '', json );
+	if ( json ){
+		parse( t, '', json );
 
-	return t;
+		return t;
+	}else{
+		return json;
+	}
 }
 
 encode.$ops = ops;
