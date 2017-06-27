@@ -1,6 +1,6 @@
 {
   "name": "bmoor-schema",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "Brian Heilman <das.ist.junk@gmail.com>",
   "description": "A simple schema pattern for UI interaction",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "build": "gulp build"
   },
   "dependencies": {
-    "bmoor": "0.3.27"
+    "bmoor": "0.3.28"
   },
   "devDependencies": {
     "babel": "6.5.2",

@@ -1938,22 +1938,13 @@
 			value: function once(event, cb) {
 				var clear,
 				    fn = function fn() {
-					cb.apply(this, arguments);
 					clear();
+					cb.apply(this, arguments);
 				};
 
 				clear = this.on(event, fn);
 
 				return clear;
-			}
-		}, {
-			key: "next",
-			value: function next(event, cb) {
-				if (this._triggering && this._triggering[event]) {
-					this.once(event, cb);
-				} else {
-					cb();
-				}
 			}
 		}, {
 			key: "subscribe",
@@ -1982,26 +1973,9 @@
 				var args = Array.prototype.slice.call(arguments, 1);
 
 				if (this.hasWaiting(event)) {
-					if (!this._triggering) {
-						this._triggering = {};
-
-						// I want to do this to enforce more async / promise style
-						setTimeout(function () {
-							var events = _this._triggering;
-
-							_this._triggering = null;
-
-							Object.keys(events).forEach(function (event) {
-								var vars = events[event];
-
-								_this._listeners[event].slice(0).forEach(function (cb) {
-									cb.apply(_this, vars);
-								});
-							});
-						}, 0);
-					}
-
-					this._triggering[event] = args;
+					this._listeners[event].slice(0).forEach(function (cb) {
+						cb.apply(_this, args);
+					});
 				}
 			}
 		}, {
