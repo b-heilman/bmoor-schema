@@ -3,13 +3,13 @@ describe('bmoor-schema::validate', function(){
 
 	it('return null with no errors', function(){
 		var schema = [{
-				from: 'eins',
+				path: 'eins',
 				type: 'boolean'
 			},{
-				from: 'zwei',
+				path: 'zwei',
 				type: 'number'
 			},{
-				from: 'foo',
+				path: 'foo',
 				type: 'string'
 			}],
 			obj = {
@@ -23,13 +23,13 @@ describe('bmoor-schema::validate', function(){
 
 	it('return an array of errors', function(){
 		var schema = [{
-				from: 'eins',
+				path: 'eins',
 				type: 'boolean'
 			},{
-				from: 'zwei',
+				path: 'zwei',
 				type: 'number'
 			},{
-				from: 'foo',
+				path: 'foo',
 				type: 'string'
 			}],
 			obj = {
@@ -41,13 +41,13 @@ describe('bmoor-schema::validate', function(){
 
 		expect( rtn ).toEqual([
 			{
-				from: 'eins',
+				path: 'eins',
 				type: 'type',
 				value: 1,
 				expect: 'boolean'
 			},
 			{
-				from: 'foo',
+				path: 'foo',
 				type: 'type',
 				value: 3,
 				expect: 'string'
@@ -57,13 +57,13 @@ describe('bmoor-schema::validate', function(){
 
 	it('should work with arrays', function(){
 		var schema = [{
-				from: 'eins[]value',
+				path: 'eins[]value',
 				type: 'boolean'
 			},{
-				from: 'zwei[]value',
+				path: 'zwei[]value',
 				type: 'number'
 			},{
-				from: 'foo[]',
+				path: 'foo[]',
 				type: 'string'
 			}],
 			obj = {
@@ -86,13 +86,13 @@ describe('bmoor-schema::validate', function(){
 
 	it('should error with arrays', function(){
 		var schema = [{
-				from: 'eins[]value',
+				path: 'eins[]value',
 				type: 'boolean'
 			},{
-				from: 'zwei[]value',
+				path: 'zwei[]value',
 				type: 'number'
 			},{
-				from: 'foo[]',
+				path: 'foo[]',
 				type: 'string'
 			}],
 			obj = {
@@ -112,13 +112,13 @@ describe('bmoor-schema::validate', function(){
 
 		expect( rtn ).toEqual([
 			{
-				from: 'eins[]value',
+				path: 'eins[]value',
 				type: 'type',
 				value: 4,
 				expect: 'boolean'
 			},
 			{
-				from: 'foo[]',
+				path: 'foo[]',
 				type: 'type',
 				value: 1,
 				expect: 'string'

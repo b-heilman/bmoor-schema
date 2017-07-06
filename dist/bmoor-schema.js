@@ -596,7 +596,7 @@ var bmoorSchema =
 	var tests = [function (def, v, errors) {
 		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== def.type) {
 			errors.push({
-				from: def.from,
+				path: def.path,
 				type: 'type',
 				value: v,
 				expect: def.type
@@ -608,7 +608,7 @@ var bmoorSchema =
 		var errors = [];
 
 		schema.forEach(function (def) {
-			new Path(def.from).exec(obj, function (v) {
+			new Path(def.path).exec(obj, function (v) {
 				tests.forEach(function (fn) {
 					fn(def, v, errors);
 				});
