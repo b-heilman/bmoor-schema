@@ -79,6 +79,10 @@
 	function parse(def, path, val) {
 		var method;
 
+		if (val === null || val === undefined) {
+			return;
+		}
+
 		if (bmoor.isArray(val)) {
 			method = 'array';
 		} else {
