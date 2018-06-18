@@ -88,41 +88,73 @@ var bmoorSchema =
 			method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
 		}
 
-		ops[method](def, path, val);
+		ops[method](def, path.slice(0), val);
+	}
+
+	function formatProperty(prop) {
+		if (prop.charAt(0) !== '[' && prop.search(/[\W]/) !== -1) {
+			prop = '["' + prop + '"]';
+		}
+
+		return prop;
+	}
+
+	function join(path) {
+		var rtn = '';
+
+		if (path && path.length) {
+			rtn = formatProperty(path.shift());
+
+			while (path.length) {
+				var prop = formatProperty(path.shift()),
+				    nextChar = prop[0];
+
+				if (nextChar !== '[') {
+					rtn += '.';
+				}
+
+				rtn += prop;
+			}
+		}
+
+		return rtn;
 	}
 
 	ops = {
 		array: function array(def, path, val) {
+			// always encode first value of array
 			var next = val[0];
 
-			parse(def, path + '[]', next);
+			path.push('[]');
+
+			parse(def, path, next);
 		},
 		object: function object(def, path, val) {
-			if (path.length) {
-				path += '.';
-			}
+			var pos = path.length;
 
 			Object.keys(val).forEach(function (key) {
-				parse(def, path + key, val[key]);
+				path[pos] = key;
+
+				parse(def, path, val[key]);
 			});
 		},
 		number: function number(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'number',
 				sample: val
 			});
 		},
 		boolean: function boolean(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'boolean',
 				sample: val
 			});
 		},
 		string: function string(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'string',
 				sample: val
 			});
@@ -133,7 +165,7 @@ var bmoorSchema =
 		var t = [];
 
 		if (json) {
-			parse(t, '', json);
+			parse(t, [], json);
 
 			return t;
 		} else {

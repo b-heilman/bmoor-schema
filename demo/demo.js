@@ -58,11 +58,11 @@
 
 	module.exports = {
 		encode: __webpack_require__(2),
-		Mapper: __webpack_require__(17),
-		Mapping: __webpack_require__(19),
-		Path: __webpack_require__(18),
-		translate: __webpack_require__(20),
-		validate: __webpack_require__(21)
+		Mapper: __webpack_require__(21),
+		Mapping: __webpack_require__(23),
+		Path: __webpack_require__(22),
+		translate: __webpack_require__(24),
+		validate: __webpack_require__(25)
 	};
 
 /***/ },
@@ -89,41 +89,73 @@
 			method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
 		}
 
-		ops[method](def, path, val);
+		ops[method](def, path.slice(0), val);
+	}
+
+	function formatProperty(prop) {
+		if (prop.charAt(0) !== '[' && prop.search(/[\W]/) !== -1) {
+			prop = '["' + prop + '"]';
+		}
+
+		return prop;
+	}
+
+	function join(path) {
+		var rtn = '';
+
+		if (path && path.length) {
+			rtn = formatProperty(path.shift());
+
+			while (path.length) {
+				var prop = formatProperty(path.shift()),
+				    nextChar = prop[0];
+
+				if (nextChar !== '[') {
+					rtn += '.';
+				}
+
+				rtn += prop;
+			}
+		}
+
+		return rtn;
 	}
 
 	ops = {
 		array: function array(def, path, val) {
+			// always encode first value of array
 			var next = val[0];
 
-			parse(def, path + '[]', next);
+			path.push('[]');
+
+			parse(def, path, next);
 		},
 		object: function object(def, path, val) {
-			if (path.length) {
-				path += '.';
-			}
+			var pos = path.length;
 
 			Object.keys(val).forEach(function (key) {
-				parse(def, path + key, val[key]);
+				path[pos] = key;
+
+				parse(def, path, val[key]);
 			});
 		},
 		number: function number(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'number',
 				sample: val
 			});
 		},
 		boolean: function boolean(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'boolean',
 				sample: val
 			});
 		},
 		string: function string(def, path, val) {
 			def.push({
-				path: path,
+				path: join(path),
 				type: 'string',
 				sample: val
 			});
@@ -134,7 +166,7 @@
 		var t = [];
 
 		if (json) {
-			parse(t, '', json);
+			parse(t, [], json);
 
 			return t;
 		} else {
@@ -156,14 +188,15 @@
 
 	bmoor.dom = __webpack_require__(5);
 	bmoor.data = __webpack_require__(6);
-	bmoor.array = __webpack_require__(7);
-	bmoor.build = __webpack_require__(8);
-	bmoor.object = __webpack_require__(12);
-	bmoor.string = __webpack_require__(13);
-	bmoor.promise = __webpack_require__(14);
+	bmoor.flow = __webpack_require__(7);
+	bmoor.array = __webpack_require__(11);
+	bmoor.build = __webpack_require__(12);
+	bmoor.object = __webpack_require__(16);
+	bmoor.string = __webpack_require__(17);
+	bmoor.promise = __webpack_require__(18);
 
-	bmoor.Memory = __webpack_require__(15);
-	bmoor.Eventing = __webpack_require__(16);
+	bmoor.Memory = __webpack_require__(19);
+	bmoor.Eventing = __webpack_require__(20);
 
 	module.exports = bmoor;
 
@@ -633,6 +666,28 @@
 	var bmoor = __webpack_require__(4),
 	    regex = {};
 
+	// TODO: put in a polyfill block
+	if (typeof window !== 'undefined' && !bmoor.isFunction(window.CustomEvent)) {
+
+		var _CustomEvent = function _CustomEvent(event, params) {
+			params = params || { bubbles: false, cancelable: false, detail: undefined };
+
+			var evt = document.createEvent('CustomEvent');
+
+			evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+
+			return evt;
+		};
+
+		_CustomEvent.prototype = window.Event.prototype;
+
+		window.CustomEvent = _CustomEvent;
+	}
+
+	if (typeof Element !== 'undefined' && !Element.prototype.matches) {
+		Element.prototype.matches = Element.prototype.msMatchesSelector;
+	}
+
 	function getReg(className) {
 		var reg = regex[className];
 
@@ -804,99 +859,6 @@
 		}
 	}
 
-	function triggerEvent(elements, eventName, eventData) {
-		var i, c, doc, node, event, EventClass;
-
-		elements = massage(elements);
-
-		for (i = 0, c = elements.length; i < c; i++) {
-			node = elements[i];
-
-			// Make sure we use the ownerDocument from the provided node to avoid cross-window problems
-			if (node.ownerDocument) {
-				doc = node.ownerDocument;
-			} else if (node.nodeType === 9) {
-				// the node may be the document itself, nodeType 9 = DOCUMENT_NODE
-				doc = node;
-			} else if (typeof document !== 'undefined') {
-				doc = document;
-			} else {
-				throw new Error('Invalid node passed to fireEvent: ' + node.id);
-			}
-
-			if (node.dispatchEvent) {
-				try {
-					// modern, except for IE still? https://developer.mozilla.org/en-US/docs/Web/API/Event
-					// I ain't doing them all
-					// slightly older style, give some backwards compatibility
-					switch (eventName) {
-						case 'click':
-						case 'mousedown':
-						case 'mouseup':
-							EventClass = MouseEvent;
-							break;
-
-						case 'focus':
-						case 'blur':
-							EventClass = FocusEvent; // jshint ignore:line
-							break;
-
-						case 'change':
-						case 'select':
-							EventClass = UIEvent; // jshint ignore:line
-							break;
-
-						default:
-							EventClass = CustomEvent;
-					}
-
-					if (!eventData) {
-						eventData = { 'view': window, 'bubbles': true, 'cancelable': true };
-					} else {
-						if (eventData.bubbles === undefined) {
-							eventData.bubbles = true;
-						}
-						if (eventData.cancelable === undefined) {
-							eventData.cancelable = true;
-						}
-					}
-
-					event = new EventClass(eventName, eventData);
-				} catch (ex) {
-					// slightly older style, give some backwards compatibility
-					switch (eventName) {
-						case 'click':
-						case 'mousedown':
-						case 'mouseup':
-							EventClass = 'MouseEvents';
-							break;
-
-						case 'focus':
-						case 'change':
-						case 'blur':
-						case 'select':
-							EventClass = 'HTMLEvents';
-							break;
-
-						default:
-							EventClass = 'CustomEvent';
-					}
-					event = doc.createEvent(EventClass);
-					event.initEvent(eventName, true, true);
-				}
-
-				event.$synthetic = true; // allow detection of synthetic events
-
-				node.dispatchEvent(event);
-			} else if (node.fireEvent) {
-				// IE-old school style
-				event = doc.createEventObject();
-				event.$synthetic = true; // allow detection of synthetic events
-				node.fireEvent('on' + eventName, event);
-			}
-		}
-	}
-
 	function bringForward(elements) {
 		var i, c, node;
 
@@ -911,6 +873,63 @@
 		}
 	}
 
+	function triggerEvent(node, eventName, eventData, eventSettings) {
+		if (node.dispatchEvent) {
+			if (!eventSettings) {
+				eventSettings = { 'view': window, 'bubbles': true, 'cancelable': true };
+			} else {
+				if (eventSettings.bubbles === undefined) {
+					eventSettings.bubbles = true;
+				}
+				if (eventSettings.cancelable === undefined) {
+					eventSettings.cancelable = true;
+				}
+			}
+
+			eventSettings.detail = eventData;
+
+			var event = new CustomEvent(eventName, eventSettings);
+			event.$bmoor = true; // allow detection of bmoor events
+
+			node.dispatchEvent(event);
+		} else if (node.fireEvent) {
+			var doc = void 0;
+
+			if (!bmoor.isString(eventName)) {
+				throw new Error('Can not throw custom events in IE');
+			}
+
+			if (node.ownerDocument) {
+				doc = node.ownerDocument;
+			} else if (node.nodeType === 9) {
+				// the node may be the document itself, nodeType 9 = DOCUMENT_NODE
+				doc = node;
+			} else if (typeof document !== 'undefined') {
+				doc = document;
+			} else {
+				throw new Error('Invalid node passed to fireEvent: ' + node.id);
+			}
+
+			var _event = doc.createEventObject();
+			_event.detail = eventData;
+			_event.$bmoor = true; // allow detection of bmoor events
+
+			node.fireEvent('on' + eventName, _event);
+		} else {
+			throw new Error('We can not trigger events here');
+		}
+	}
+
+	function onEvent(node, eventName, cb, qualifier) {
+		node.addEventListener(eventName, function (event) {
+			if (qualifier && !(event.target || event.srcElement).matches(qualifier)) {
+				return;
+			}
+
+			cb(event.detail, event);
+		});
+	}
+
 	module.exports = {
 		getScrollPosition: getScrollPosition,
 		getBoundryBox: getBoundryBox,
@@ -920,8 +939,24 @@
 		centerOn: centerOn,
 		addClass: addClass,
 		removeClass: removeClass,
+		bringForward: bringForward,
 		triggerEvent: triggerEvent,
-		bringForward: bringForward
+		onEvent: onEvent,
+		on: function on(node, settings) {
+			Object.keys(settings).forEach(function (eventName) {
+				var ops = settings[eventName];
+
+				if (bmoor.isFunction(ops)) {
+					onEvent(node, eventName, ops);
+				} else {
+					Object.keys(ops).forEach(function (qualifier) {
+						var cb = ops[qualifier];
+
+						onEvent(node, eventName, cb, qualifier);
+					});
+				}
+			});
+		}
 	};
 
 /***/ },
@@ -970,50 +1005,181 @@
 
 	'use strict';
 
+	module.exports = {
+		soon: __webpack_require__(8),
+		debounce: __webpack_require__(9),
+		window: __webpack_require__(10)
+	};
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	module.exports = function (cb, time, settings) {
+		var ctx, args, timeout;
+
+		if (!settings) {
+			settings = {};
+		}
+
+		function fire() {
+			timeout = null;
+			cb.apply(settings.context || ctx, args);
+		}
+
+		var fn = function sooned() {
+			ctx = this;
+			args = arguments;
+
+			if (!timeout) {
+				timeout = setTimeout(fire, time);
+			}
+		};
+
+		fn.clear = function () {
+			clearTimeout(timeout);
+			timeout = null;
+		};
+
+		fn.flush = function () {
+			fire();
+			fn.clear();
+		};
+
+		return fn;
+	};
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	module.exports = function (cb, time, settings) {
+		var ctx, args, limit, timeout;
+
+		if (!settings) {
+			settings = {};
+		}
+
+		function fire() {
+			timeout = null;
+			cb.apply(settings.context || ctx, args);
+		}
+
+		function run() {
+			var now = Date.now();
+
+			if (now >= limit) {
+				fire();
+			} else {
+				timeout = setTimeout(run, limit - now);
+			}
+		}
+
+		var fn = function debounced() {
+			var now = Date.now();
+
+			ctx = this;
+			args = arguments;
+			limit = now + time;
+
+			if (!timeout) {
+				timeout = setTimeout(run, time);
+			}
+		};
+
+		fn.clear = function () {
+			clearTimeout(timeout);
+			timeout = null;
+			limit = null;
+		};
+
+		fn.flush = function () {
+			fire();
+			fn.clear();
+		};
+
+		fn.shift = function (diff) {
+			limit += diff;
+		};
+
+		return fn;
+	};
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	module.exports = function (cb, min, max, settings) {
+		var ctx, args, next, limit, timeout;
+
+		if (!settings) {
+			settings = {};
+		}
+
+		function fire() {
+			limit = null;
+			cb.apply(settings.context || ctx, args);
+		}
+
+		function run() {
+			var now = Date.now();
+
+			if (now >= limit || now >= next) {
+				fire();
+			} else {
+				timeout = setTimeout(run, Math.min(limit, next) - now);
+			}
+		}
+
+		var fn = function windowed() {
+			var now = Date.now();
+
+			ctx = this;
+			args = arguments;
+			next = now + min;
+
+			if (!limit) {
+				limit = now + max;
+				timeout = setTimeout(run, min);
+			}
+		};
+
+		fn.clear = function () {
+			clearTimeout(timeout);
+			timeout = null;
+			limit = null;
+		};
+
+		fn.flush = function () {
+			fire();
+			fn.clear();
+		};
+
+		fn.shift = function (diff) {
+			limit += diff;
+		};
+
+		return fn;
+	};
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
 	/**
 	 * Array helper functions
 	 * @module bmoor.array
 	 **/
 
 	var bmoor = __webpack_require__(4);
-
-	/**
-	 * Search an array for an element, starting at the begining or a specified location
-	 *
-	 * @function indexOf
-	 * @param {array} arr An array to be searched
-	 * @param {*} searchElement Content for which to be searched
-	 * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
-	 * @return {integer} -1 if not found, otherwise the location of the element
-	 **/
-	function indexOf(arr, searchElement, fromIndex) {
-		if (arr.indexOf) {
-			return arr.indexOf(searchElement, fromIndex);
-		} else {
-			var length = parseInt(arr.length, 0);
-
-			fromIndex = +fromIndex || 0;
-
-			if (Math.abs(fromIndex) === Infinity) {
-				fromIndex = 0;
-			}
-
-			if (fromIndex < 0) {
-				fromIndex += length;
-				if (fromIndex < 0) {
-					fromIndex = 0;
-				}
-			}
-
-			for (; fromIndex < length; fromIndex++) {
-				if (arr[fromIndex] === searchElement) {
-					return fromIndex;
-				}
-			}
-
-			return -1;
-		}
-	}
 
 	/**
 	 * Search an array for an element and remove it, starting at the begining or a specified location
@@ -1025,7 +1191,7 @@
 	 * @return {array} array containing removed element
 	 **/
 	function remove(arr, searchElement, fromIndex) {
-		var pos = indexOf(arr, searchElement, fromIndex);
+		var pos = arr.indexOf(searchElement, fromIndex);
 
 		if (pos > -1) {
 			return arr.splice(pos, 1)[0];
@@ -1043,7 +1209,7 @@
 	 **/
 	function removeAll(arr, searchElement, fromIndex) {
 		var r,
-		    pos = indexOf(arr, searchElement, fromIndex);
+		    pos = arr.indexOf(searchElement, fromIndex);
 
 		if (pos > -1) {
 			r = removeAll(arr, searchElement, pos + 1);
@@ -1117,45 +1283,7 @@
 	}
 
 	/**
-	 * Generate a new array whose content is a subset of the intial array, but satisfies the supplied function
-	 *
-	 * @function remove
-	 * @param {array} arr An array to be searched
-	 * @param {*} searchElement Content for which to be searched
-	 * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
-	 * @return {integer} number of elements removed
-	 **/
-	function filter(arr, func, thisArg) {
-		if (arr.filter) {
-			return arr.filter(func, thisArg);
-		} else {
-			var i,
-			    val,
-			    t = Object(this),
-			    // jshint ignore:line
-			c = parseInt(t.length, 10),
-			    res = [];
-
-			if (!bmoor.isFunction(func)) {
-				throw new Error('func needs to be a function');
-			}
-
-			for (i = 0; i < c; i++) {
-				if (i in t) {
-					val = t[i];
-
-					if (func.call(thisArg, val, i, t)) {
-						res.push(val);
-					}
-				}
-			}
-
-			return res;
-		}
-	}
-
-	/**
-	 * Compare two arrays, 
+	 * Compare two arrays.
 	 *
 	 * @function remove
 	 * @param {array} arr1 An array to be compared
@@ -1207,25 +1335,117 @@
 		};
 	}
 
+	/**
+	 * Create a new array that is completely unique
+	 *
+	 * @function unique
+	 * @param {array} arr The array to be made unique
+	 * @param {function|boolean} sort If boolean === true, array is presorted.  If function, use to sort
+	 **/
+	function unique(arr, sort, uniqueFn) {
+		var rtn = [];
+
+		if (arr.length) {
+			if (sort) {
+				// more efficient because I can presort
+				if (bmoor.isFunction(sort)) {
+					arr = arr.slice(0).sort(sort);
+				}
+
+				var last = void 0;
+
+				for (var i = 0, c = arr.length; i < c; i++) {
+					var d = arr[i],
+					    v = uniqueFn ? uniqueFn(d) : d;
+
+					if (v !== last) {
+						last = v;
+						rtn.push(d);
+					}
+				}
+			} else if (uniqueFn) {
+				var hash = {};
+
+				for (var _i = 0, _c = arr.length; _i < _c; _i++) {
+					var _d = arr[_i],
+					    _v = uniqueFn(_d);
+
+					if (!hash[_v]) {
+						hash[_v] = true;
+						rtn.push(_d);
+					}
+				}
+			} else {
+				// greedy and inefficient
+				for (var _i2 = 0, _c2 = arr.length; _i2 < _c2; _i2++) {
+					var _d2 = arr[_i2];
+
+					if (rtn.indexOf(_d2) === -1) {
+						rtn.push(_d2);
+					}
+				}
+			}
+		}
+
+		return rtn;
+	}
+
+	// I could probably make this sexier, like allow uniqueness algorithm, but I'm keeping it simple for now
+	function intersection(arr1, arr2) {
+		var rtn = [];
+
+		if (arr1.length > arr2.length) {
+			var t = arr1;
+
+			arr1 = arr2;
+			arr2 = t;
+		}
+
+		for (var i = 0, c = arr1.length; i < c; i++) {
+			var d = arr1[i];
+
+			if (arr2.indexOf(d) !== -1) {
+				rtn.push(d);
+			}
+		}
+
+		return rtn;
+	}
+
+	function difference(arr1, arr2) {
+		var rtn = [];
+
+		for (var i = 0, c = arr1.length; i < c; i++) {
+			var d = arr1[i];
+
+			if (arr2.indexOf(d) === -1) {
+				rtn.push(d);
+			}
+		}
+
+		return rtn;
+	}
+
 	module.exports = {
-		indexOf: indexOf,
 		remove: remove,
 		removeAll: removeAll,
 		bisect: bisect,
-		filter: filter,
-		compare: compare
+		compare: compare,
+		unique: unique,
+		intersection: intersection,
+		difference: difference
 	};
 
 /***/ },
-/* 8 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var bmoor = __webpack_require__(4),
-	    mixin = __webpack_require__(9),
-	    plugin = __webpack_require__(10),
-	    decorate = __webpack_require__(11);
+	    mixin = __webpack_require__(13),
+	    plugin = __webpack_require__(14),
+	    decorate = __webpack_require__(15);
 
 	function proc(action, proto, def) {
 		var i, c;
@@ -1280,7 +1500,7 @@
 	module.exports = maker;
 
 /***/ },
-/* 9 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1294,7 +1514,7 @@
 	};
 
 /***/ },
-/* 10 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1350,7 +1570,7 @@
 	};
 
 /***/ },
-/* 11 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1395,7 +1615,7 @@
 	};
 
 /***/ },
-/* 12 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1452,6 +1672,34 @@
 		});
 
 		return target;
+	}
+
+	function makeExploder(paths) {
+		var fn;
+
+		paths.forEach(function (path) {
+			var old = fn,
+			    setter = bmoor.makeSetter(path);
+
+			if (old) {
+				fn = function fn(ctx, obj) {
+					setter(ctx, obj[path]);
+					old(ctx, obj);
+				};
+			} else {
+				fn = function fn(ctx, obj) {
+					setter(ctx, obj[path]);
+				};
+			}
+		});
+
+		return function (obj) {
+			var rtn = {};
+
+			fn(rtn, obj);
+
+			return rtn;
+		};
 	}
 
 	function implode(obj, ignore) {
@@ -1548,16 +1796,14 @@
 		for (i = 1, c = arguments.length; i < c; i++) {
 			from = arguments[i];
 
-			if (to === from || !from) {
+			if (to === from) {
 				continue;
 			} else if (to && to.merge) {
 				to.merge(from);
+			} else if (!bmoor.isObject(from)) {
+				to = from;
 			} else if (!bmoor.isObject(to)) {
-				if (bmoor.isObject(from)) {
-					to = merge({}, from);
-				} else {
-					to = from;
-				}
+				to = merge({}, from);
 			} else {
 				bmoor.safe(from, m);
 			}
@@ -1637,6 +1883,7 @@
 		keys: keys,
 		values: values,
 		explode: explode,
+		makeExploder: makeExploder,
 		implode: implode,
 		mask: mask,
 		extend: extend,
@@ -1647,7 +1894,7 @@
 	};
 
 /***/ },
-/* 13 */
+/* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1844,49 +2091,174 @@
 	};
 
 /***/ },
-/* 14 */
-/***/ function(module, exports) {
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
+
+	var window = __webpack_require__(10);
 
 	function always(promise, func) {
 		promise.then(func, func);
 		return promise;
 	}
 
+	function stack(calls, settings) {
+
+		if (!calls) {
+			throw new Error('calling stack with no call?');
+		}
+
+		if (!settings) {
+			settings = {};
+		}
+
+		var min = settings.min || 1,
+		    max = settings.max || 10,
+		    limit = settings.limit || 5,
+		    update = window(settings.update || function () {}, min, max);
+
+		return new Promise(function (resolve, reject) {
+			var run,
+			    timeout,
+			    errors = [],
+			    active = 0,
+			    callStack = calls.slice(0);
+
+			function registerError(err) {
+				errors.push(err);
+			}
+
+			function next() {
+				active--;
+
+				update({ active: active, remaining: callStack.length });
+
+				if (callStack.length) {
+					if (!timeout) {
+						timeout = setTimeout(run, 1);
+					}
+				} else if (!active) {
+					if (errors.length) {
+						reject(errors);
+					} else {
+						resolve();
+					}
+				}
+			}
+
+			run = function run() {
+				timeout = null;
+
+				while (active < limit && callStack.length) {
+					var fn = callStack.pop();
+
+					active++;
+
+					fn().catch(registerError).then(next);
+				}
+			};
+
+			run();
+		});
+	}
+
+	function hash(obj) {
+		var rtn = {};
+
+		return Promise.all(Object.keys(obj).map(function (key) {
+			var p = obj[key];
+
+			if (p && p.then) {
+				p.then(function (v) {
+					rtn[key] = v;
+				});
+			} else {
+				rtn[key] = p;
+			}
+
+			return p;
+		})).then(function () {
+			return rtn;
+		});
+	}
+
 	module.exports = {
+		hash: hash,
+		stack: stack,
 		always: always
 	};
 
 /***/ },
-/* 15 */
+/* 19 */
 /***/ function(module, exports) {
 
 	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var master = {};
 
-	var Memory = function Memory() {
-		_classCallCheck(this, Memory);
+	var Memory = function () {
+		function Memory() {
+			_classCallCheck(this, Memory);
 
-		var index = {};
+			var index = {};
 
-		this.check = function (name) {
-			return index[name];
-		};
+			this.get = function (name) {
+				return index[name];
+			};
 
-		this.register = function (name, obj) {
-			index[name] = obj;
-		};
+			this.check = function (name) {
+				console.log('Memory::check will soon removed');
+				return index[name];
+			};
 
-		this.clear = function (name) {
-			if (name in index) {
-				delete index[name];
+			this.isSet = function (name) {
+				return !!index[name];
+			};
+
+			this.register = function (name, obj) {
+				index[name] = obj;
+			};
+
+			this.clear = function (name) {
+				if (name in index) {
+					delete index[name];
+				}
+			};
+
+			this.keys = function () {
+				return Object.keys(index);
+			};
+		}
+
+		_createClass(Memory, [{
+			key: 'import',
+			value: function _import(json) {
+				var _this = this;
+
+				Object.keys(json).forEach(function (key) {
+					_this.register(key, json[key]);
+				});
 			}
-		};
-	};
+		}, {
+			key: 'export',
+			value: function _export() {
+				var _this2 = this;
+
+				return this.keys().reduce(function (rtn, key) {
+					rtn[key] = _this2.get(key);
+
+					return rtn;
+				}, {});
+			}
+		}]);
+
+		return Memory;
+	}();
 
 	module.exports = {
 		Memory: Memory,
@@ -1904,7 +2276,7 @@
 	};
 
 /***/ },
-/* 16 */
+/* 20 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1995,7 +2367,7 @@
 	module.exports = Eventing;
 
 /***/ },
-/* 17 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2004,9 +2376,9 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Path = __webpack_require__(18),
+	var Path = __webpack_require__(22),
 	    bmoor = __webpack_require__(3),
-	    Mapping = __webpack_require__(19);
+	    Mapping = __webpack_require__(23);
 
 	function stack(fn, old) {
 		if (old) {
@@ -2079,7 +2451,7 @@
 	module.exports = Mapper;
 
 /***/ },
-/* 18 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2176,7 +2548,7 @@
 	module.exports = Path;
 
 /***/ },
-/* 19 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2185,7 +2557,7 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Path = __webpack_require__(18);
+	var Path = __webpack_require__(22);
 
 	function all(next) {
 		return function (toObj, fromObj) {
@@ -2353,7 +2725,7 @@
 	module.exports = Mapping;
 
 /***/ },
-/* 20 */
+/* 24 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2431,14 +2803,14 @@
 	module.exports = encode;
 
 /***/ },
-/* 21 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var Path = __webpack_require__(18);
+	var Path = __webpack_require__(22);
 
 	var tests = [function (def, v, errors) {
 		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== def.type) {
