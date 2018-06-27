@@ -77,101 +77,109 @@
 	    ops;
 
 	function parse(def, path, val) {
-		var method;
+	    var method;
 
-		if (val === null || val === undefined) {
-			return;
-		}
+	    if (val === null || val === undefined) {
+	        return;
+	    }
 
-		if (bmoor.isArray(val)) {
-			method = 'array';
-		} else {
-			method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
-		}
+	    if (bmoor.isArray(val)) {
+	        method = 'array';
+	    } else {
+	        method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
+	    }
 
-		ops[method](def, path.slice(0), val);
+	    ops[method](def, path.slice(0), val);
 	}
 
-	function formatProperty(prop) {
-		if (prop.charAt(0) !== '[' && prop.search(/[\W]/) !== -1) {
-			prop = '["' + prop + '"]';
-		}
+	function formatProperty(prop, escaped) {
+	    if (prop.charAt(0) !== '[' && prop.search(escaped) !== -1) {
+	        prop = '["' + prop + '"]';
+	    }
 
-		return prop;
+	    return prop;
 	}
 
-	function join(path) {
-		var rtn = '';
+	function join(path, escaped) {
+	    var rtn = '';
 
-		if (path && path.length) {
-			rtn = formatProperty(path.shift());
+	    if (path && path.length) {
+	        rtn = formatProperty(path.shift(), escaped);
 
-			while (path.length) {
-				var prop = formatProperty(path.shift()),
-				    nextChar = prop[0];
+	        while (path.length) {
+	            var prop = formatProperty(path.shift(), escaped),
+	                nextChar = prop[0];
 
-				if (nextChar !== '[') {
-					rtn += '.';
-				}
+	            if (nextChar !== '[') {
+	                rtn += '.';
+	            }
 
-				rtn += prop;
-			}
-		}
+	            rtn += prop;
+	        }
+	    }
 
-		return rtn;
+	    return rtn;
 	}
 
 	ops = {
-		array: function array(def, path, val) {
-			// always encode first value of array
-			var next = val[0];
+	    array: function array(def, path, val) {
+	        // always encode first value of array
+	        var next = val[0];
 
-			path.push('[]');
+	        path.push('[]');
 
-			parse(def, path, next);
-		},
-		object: function object(def, path, val) {
-			var pos = path.length;
+	        parse(def, path, next);
+	    },
+	    object: function object(def, path, val) {
+	        var pos = path.length;
 
-			Object.keys(val).forEach(function (key) {
-				path[pos] = key;
+	        Object.keys(val).forEach(function (key) {
+	            path[pos] = key;
 
-				parse(def, path, val[key]);
-			});
-		},
-		number: function number(def, path, val) {
-			def.push({
-				path: join(path),
-				type: 'number',
-				sample: val
-			});
-		},
-		boolean: function boolean(def, path, val) {
-			def.push({
-				path: join(path),
-				type: 'boolean',
-				sample: val
-			});
-		},
-		string: function string(def, path, val) {
-			def.push({
-				path: join(path),
-				type: 'string',
-				sample: val
-			});
-		}
+	            parse(def, path, val[key]);
+	        });
+	    },
+	    number: function number(def, path, val) {
+	        def.push({
+	            path: path,
+	            type: 'number',
+	            sample: val
+	        });
+	    },
+	    boolean: function boolean(def, path, val) {
+	        def.push({
+	            path: path,
+	            type: 'boolean',
+	            sample: val
+	        });
+	    },
+	    string: function string(def, path, val) {
+	        def.push({
+	            path: path,
+	            type: 'string',
+	            sample: val
+	        });
+	    }
 	};
 
-	function encode(json) {
-		var t = [];
+	function encode(json, escaped) {
+	    var t = [];
 
-		if (json) {
-			parse(t, [], json);
+	    if (!escaped) {
+	        escaped = /[\W]/;
+	    }
 
-			return t;
-		} else {
-			return json;
-		}
+	    if (json) {
+	        parse(t, [], json);
+
+	        t.forEach(function (d) {
+	            return d.path = join(d.path, escaped);
+	        });
+
+	        return t;
+	    } else {
+	        return json;
+	    }
 	}
 
 	encode.$ops = ops;
