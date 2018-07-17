@@ -57,10 +57,10 @@ describe('bmoor-schema::validate', function(){
 
 	it('should work with arrays', function(){
 		var schema = [{
-				path: 'eins[]value',
+				path: 'eins[].value',
 				type: 'boolean'
 			},{
-				path: 'zwei[]value',
+				path: 'zwei[].value',
 				type: 'number'
 			},{
 				path: 'foo[]',
@@ -86,10 +86,10 @@ describe('bmoor-schema::validate', function(){
 
 	it('should error with arrays', function(){
 		var schema = [{
-				path: 'eins[]value',
+				path: 'eins[].value',
 				type: 'boolean'
 			},{
-				path: 'zwei[]value',
+				path: 'zwei[].value',
 				type: 'number'
 			},{
 				path: 'foo[]',
@@ -112,11 +112,84 @@ describe('bmoor-schema::validate', function(){
 
 		expect( rtn ).toEqual([
 			{
-				path: 'eins[]value',
+				path: 'eins[].value',
 				type: 'type',
 				value: 4,
 				expect: 'boolean'
 			},
+			{
+				path: 'foo[]',
+				type: 'type',
+				value: 1,
+				expect: 'string'
+			}
+		]);
+	});
+
+	it('should require values to be defined', function(){
+		var schema = [{
+				path: 'eins[].value',
+				type: 'boolean',
+				required: true
+			},{
+				path: 'zwei[].value',
+				type: 'number'
+			},{
+				path: 'foo[]',
+				type: 'string'
+			}],
+			obj = {
+				zwei: [
+					{value:2},
+					{value:3}
+				],
+				foo: [
+					1,
+					'bar'
+				]
+			},
+			rtn = validate(schema,obj);
+
+		expect( rtn ).toEqual([
+			{
+				path: 'eins[].value',
+				type: 'missing',
+				value: undefined,
+				expect: 'boolean'
+			},
+			{
+				path: 'foo[]',
+				type: 'type',
+				value: 1,
+				expect: 'string'
+			}
+		]);
+	});
+
+	it('should allow unrequired to be optional', function(){
+		var schema = [{
+				path: 'eins[].value',
+				type: 'boolean'
+			},{
+				path: 'zwei[].value',
+				type: 'number'
+			},{
+				path: 'foo[]',
+				type: 'string'
+			}],
+			obj = {
+				zwei: [
+					{value:2},
+					{value:3}
+				],
+				foo: [
+					1,
+					'bar'
+				]
+			},
+			rtn = validate(schema,obj);
+
+		expect( rtn ).toEqual([
 			{
 				path: 'foo[]',
 				type: 'type',

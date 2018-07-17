@@ -4,7 +4,7 @@ var bmoor = require('bmoor'),
 
 class Path {
 	// normal path: foo.bar
-	// array path : foo[]bar
+	// array path : foo[].bar
 	constructor( path ){
 		var end,
 			dex = path.indexOf('['),
@@ -51,6 +51,8 @@ class Path {
 		this.get = makeGetter( this.path );
 	}
 
+	// converts something like [{a:1},{a:2}] to [1,2]
+	// when given [].a
 	flatten( obj ){
 		var t,
 			rtn,
@@ -62,14 +64,18 @@ class Path {
 			t = this.get(obj);
 			rtn = [];
 			next = new Path( this.remainder );
-			t.forEach(function( o ){
-				rtn = rtn.concat( next.flatten(o) );
-			});
+
+			if ( t ){
+				t.forEach(function( o ){
+					rtn = rtn.concat( next.flatten(o) );
+				});
+			}
 
 			return rtn;
 		}
 	}
 
+	// call this method against 
 	exec( obj, fn ){
 		this.flatten( obj ).forEach(function( o ){
 			fn( o );

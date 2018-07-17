@@ -57,11 +57,10 @@ var bmoorSchema =
 
 	module.exports = {
 		encode: __webpack_require__(2),
-		Mapper: __webpack_require__(4),
-		Mapping: __webpack_require__(6),
-		Path: __webpack_require__(5),
-		translate: __webpack_require__(7),
-		validate: __webpack_require__(8)
+		Mapper: __webpack_require__(7),
+		Mapping: __webpack_require__(9),
+		Path: __webpack_require__(8),
+		validate: __webpack_require__(10)
 	};
 
 /***/ },
@@ -70,129 +69,395 @@ var bmoorSchema =
 
 	'use strict';
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	var bmoor = __webpack_require__(3),
-	    ops;
-
-	function parse(def, path, val) {
-	    var method;
-
-	    if (val === null || val === undefined) {
-	        return;
-	    }
-
-	    if (bmoor.isArray(val)) {
-	        method = 'array';
-	    } else {
-	        method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
-	    }
-
-	    ops[method](def, path.slice(0), val);
-	}
-
-	function formatProperty(prop, escaped) {
-	    if (prop.charAt(0) !== '[' && prop.search(escaped) !== -1) {
-	        prop = '["' + prop + '"]';
-	    }
-
-	    return prop;
-	}
-
-	function join(path, escaped) {
-	    var rtn = '';
-
-	    if (path && path.length) {
-	        rtn = formatProperty(path.shift(), escaped);
-
-	        while (path.length) {
-	            var prop = formatProperty(path.shift(), escaped),
-	                nextChar = prop[0];
-
-	            if (nextChar !== '[') {
-	                rtn += '.';
-	            }
-
-	            rtn += prop;
-	        }
-	    }
-
-	    return rtn;
-	}
-
-	ops = {
-	    array: function array(def, path, val) {
-	        // always encode first value of array
-	        var next = val[0];
-
-	        path.push('[]');
-
-	        parse(def, path, next);
-	    },
-	    object: function object(def, path, val) {
-	        var pos = path.length;
-
-	        Object.keys(val).forEach(function (key) {
-	            path[pos] = key;
-
-	            parse(def, path, val[key]);
-	        });
-	    },
-	    number: function number(def, path, val) {
-	        def.push({
-	            path: path,
-	            type: 'number',
-	            sample: val
-	        });
-	    },
-	    boolean: function boolean(def, path, val) {
-	        def.push({
-	            path: path,
-	            type: 'boolean',
-	            sample: val
-	        });
-	    },
-	    string: function string(def, path, val) {
-	        def.push({
-	            path: path,
-	            type: 'string',
-	            sample: val
-	        });
-	    }
+	module.exports = {
+	    bmoorSchema: __webpack_require__(3).default,
+	    jsonSchema: __webpack_require__(5).default
 	};
-
-	function encode(json, escaped) {
-	    var t = [];
-
-	    if (!escaped) {
-	        escaped = /[\W]/;
-	    }
-
-	    if (json) {
-	        parse(t, [], json);
-
-	        t.forEach(function (d) {
-	            return d.path = join(d.path, escaped);
-	        });
-
-	        return t;
-	    } else {
-	        return json;
-	    }
-	}
-
-	encode.$ops = ops;
-
-	module.exports = encode;
 
 /***/ },
 /* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var bmoor = __webpack_require__(4),
+	    ops;
+
+	function parse(def, path, val) {
+		var method;
+
+		if (val === null || val === undefined) {
+			return;
+		}
+
+		if (bmoor.isArray(val)) {
+			method = 'array';
+		} else {
+			method = typeof val === 'undefined' ? 'undefined' : _typeof(val);
+		}
+
+		ops[method](def, path.slice(0), val);
+	}
+
+	function formatProperty(prop, escaped) {
+		if (prop.charAt(0) !== '[' && prop.search(escaped) !== -1) {
+			prop = '["' + prop + '"]';
+		}
+
+		return prop;
+	}
+
+	function join(path, escaped) {
+		var rtn = '';
+
+		if (path && path.length) {
+			rtn = formatProperty(path.shift(), escaped);
+
+			while (path.length) {
+				var prop = formatProperty(path.shift(), escaped),
+				    nextChar = prop[0];
+
+				if (nextChar !== '[') {
+					rtn += '.';
+				}
+
+				rtn += prop;
+			}
+		}
+
+		return rtn;
+	}
+
+	ops = {
+		array: function array(def, path, val) {
+			// always encode first value of array
+			var next = val[0];
+
+			path.push('[]');
+
+			parse(def, path, next);
+		},
+		object: function object(def, path, val) {
+			var pos = path.length;
+
+			Object.keys(val).forEach(function (key) {
+				path[pos] = key;
+
+				parse(def, path, val[key]);
+			});
+		},
+		number: function number(def, path, val) {
+			def.push({
+				path: path,
+				type: 'number',
+				sample: val
+			});
+		},
+		boolean: function boolean(def, path, val) {
+			def.push({
+				path: path,
+				type: 'boolean',
+				sample: val
+			});
+		},
+		string: function string(def, path, val) {
+			def.push({
+				path: path,
+				type: 'string',
+				sample: val
+			});
+		}
+	};
+
+	function encode(json, escaped) {
+		var t = [];
+
+		if (!escaped) {
+			escaped = /[\W]/;
+		}
+
+		if (json) {
+			parse(t, [], json);
+
+			t.forEach(function (d) {
+				return d.path = join(d.path, escaped);
+			});
+
+			return t;
+		} else {
+			return json;
+		}
+	}
+
+	module.exports = {
+		default: encode,
+		types: ops
+	};
+
+/***/ },
+/* 4 */
 /***/ function(module, exports) {
 
 	module.exports = bmoor;
 
 /***/ },
-/* 4 */
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var Tokenizer = __webpack_require__(6).default;
+
+	var go;
+
+	function buildLeaf(info, token, prior) {
+		var t = {},
+		    types = [info.type];
+
+		if (info.sensitivity && info.sensitivity === 'ignore') {
+			t.ignore = true;
+			types.push('null');
+		} else if (info.sensitivity && info.sensitivity === 'required') {
+			prior.push(token);
+		} else {
+			types.push('null');
+		}
+
+		t.type = types;
+
+		if (info.encrypted) {
+			t.encrypted = true;
+		}
+
+		return t;
+	}
+
+	function decorateObject(tokens, obj, info) {
+		// could also be blank object coming from 
+		if (!obj.type) {
+			obj.type = ['object', 'null'];
+		}
+
+		if (!obj.required) {
+			obj.required = [];
+		}
+
+		if (!obj.properties) {
+			obj.properties = {};
+		}
+
+		go(tokens, obj.properties, info, obj.required);
+	}
+
+	function decorateArray(tokens, obj, token, info) {
+		var path = token.value,
+		    next = token.next;
+
+		if (!obj.type) {
+			obj.type = ['array', 'null'];
+		}
+
+		if (!obj.items) {
+			obj.items = {};
+		}
+
+		if (info.sensitivity === 'required') {
+			obj.minItems = 1;
+		}
+
+		if (next) {
+			if (next.charAt(0) === '[') {
+				decorateArray(tokens, obj.items, tokens.next(), info);
+			} else {
+				decorateObject(tokens, obj.items, info);
+			}
+		} else {
+			obj.items = buildLeaf(info, path, []);
+		}
+	}
+
+	go = function go(tokens, root, info, prior) {
+		var token = tokens.next(),
+		    path = token.value,
+		    pos = path.indexOf('['),
+		    next = token.next;
+
+		if (pos !== -1 && path.charAt(pos + 1) === ']') {
+			// this is an array
+			var prop = path.substr(0, pos),
+			    t = root[prop];
+
+			if (!t) {
+				t = root[prop] = {};
+			}
+
+			decorateArray(tokens, t, token, info);
+		} else {
+			if (pos === 0) {
+				path = path.substring(2, path.length - 2);
+			}
+
+			if (next) {
+				var _t = root[path];
+
+				if (!_t) {
+					_t = root[path] = {};
+				}
+
+				decorateObject(tokens, _t, info);
+			} else {
+				root[path] = buildLeaf(info, path, prior);
+			}
+		}
+	};
+
+	function encode(fields, shift, extra) {
+		var root = {},
+		    reqs = [];
+
+		if (shift) {
+			shift += '.';
+		} else {
+			shift = '';
+		}
+
+		fields.map(function (field) {
+			var path = shift + field.path;
+
+			try {
+				var tokens = new Tokenizer(path);
+
+				go(tokens, root, field, reqs);
+			} catch (ex) {
+				console.log('-------');
+				console.log(path);
+				console.log(ex.message);
+				console.log(ex);
+			}
+		});
+
+		return Object.assign({
+			'$schema': 'http://json-schema.org/schema#',
+			type: 'object',
+			required: reqs,
+			properties: root
+		}, extra || {});
+	}
+
+	module.exports = {
+		default: encode
+	};
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function nextToken(path) {
+	    var i = 0,
+	        c = path.length,
+	        char = path.charAt(0),
+	        more = true;
+
+	    if (char === '[') {
+	        var count = 0;
+
+	        do {
+	            if (char === '[') {
+	                count++;
+	            } else if (char === ']') {
+	                count--;
+	            }
+
+	            i++;
+	            char = path.charAt(i);
+	        } while (count && i < c);
+	    } else {
+	        do {
+	            if (char === '.' || char === '[') {
+	                more = false;
+	            } else {
+	                i++;
+	                char = path.charAt(i);
+	            }
+	        } while (more && i < c);
+	    }
+
+	    var token = path.substring(0, i),
+	        isArray = false;
+
+	    if (char === '[' && path.charAt(i + 1) === ']') {
+	        token += '[]';
+	        i += 2;
+
+	        isArray = true;
+	    }
+
+	    if (path.charAt(i) === '.') {
+	        i++;
+	    }
+
+	    var next = path.substring(i);
+
+	    return {
+	        value: token,
+	        next: next,
+	        done: false,
+	        isArray: isArray
+	    };
+	}
+
+	var Tokenizer = function () {
+	    function Tokenizer(path) {
+	        _classCallCheck(this, Tokenizer);
+
+	        var tokens = [];
+
+	        this.path = path;
+
+	        while (path) {
+	            var cur = nextToken(path);
+	            tokens.push(cur);
+	            path = cur.next;
+	        }
+
+	        this.pos = 0;
+	        this.tokens = tokens;
+	    }
+
+	    _createClass(Tokenizer, [{
+	        key: 'next',
+	        value: function next() {
+	            var token = this.tokens[this.pos];
+
+	            if (token) {
+	                this.pos++;
+
+	                return token;
+	            } else {
+	                return {
+	                    done: true
+	                };
+	            }
+	        }
+	    }]);
+
+	    return Tokenizer;
+	}();
+
+	module.exports = {
+	    default: Tokenizer
+	};
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -201,9 +466,9 @@ var bmoorSchema =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Path = __webpack_require__(5),
-	    bmoor = __webpack_require__(3),
-	    Mapping = __webpack_require__(6);
+	var Path = __webpack_require__(8),
+	    bmoor = __webpack_require__(4),
+	    Mapping = __webpack_require__(9);
 
 	function stack(fn, old) {
 		if (old) {
@@ -276,7 +541,7 @@ var bmoorSchema =
 	module.exports = Mapper;
 
 /***/ },
-/* 5 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -285,13 +550,13 @@ var bmoorSchema =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var bmoor = __webpack_require__(3),
+	var bmoor = __webpack_require__(4),
 	    makeGetter = bmoor.makeGetter,
 	    makeSetter = bmoor.makeSetter;
 
 	var Path = function () {
 		// normal path: foo.bar
-		// array path : foo[]bar
+		// array path : foo[].bar
 		function Path(path) {
 			_classCallCheck(this, Path);
 
@@ -340,6 +605,10 @@ var bmoorSchema =
 			this.get = makeGetter(this.path);
 		}
 
+		// converts something like [{a:1},{a:2}] to [1,2]
+		// when given [].a
+
+
 		_createClass(Path, [{
 			key: 'flatten',
 			value: function flatten(obj) {
@@ -351,13 +620,19 @@ var bmoorSchema =
 					t = this.get(obj);
 					rtn = [];
 					next = new Path(this.remainder);
-					t.forEach(function (o) {
-						rtn = rtn.concat(next.flatten(o));
-					});
+
+					if (t) {
+						t.forEach(function (o) {
+							rtn = rtn.concat(next.flatten(o));
+						});
+					}
 
 					return rtn;
 				}
 			}
+
+			// call this method against 
+
 		}, {
 			key: 'exec',
 			value: function exec(obj, fn) {
@@ -373,7 +648,7 @@ var bmoorSchema =
 	module.exports = Path;
 
 /***/ },
-/* 6 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -382,7 +657,7 @@ var bmoorSchema =
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Path = __webpack_require__(5);
+	var Path = __webpack_require__(8);
 
 	function all(next) {
 		return function (toObj, fromObj) {
@@ -550,95 +825,17 @@ var bmoorSchema =
 	module.exports = Mapping;
 
 /***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	function go(from, root, info) {
-		var cur = from.shift();
-
-		if (cur[cur.length - 1] === ']') {
-			cur = cur.substr(0, cur.length - 2);
-
-			if (cur === '') {
-				// don't think anything...
-			} else {
-				if (!root[cur]) {
-					root[cur] = {
-						type: 'array'
-					};
-				}
-				root = root[cur];
-			}
-			cur = 'items';
-		}
-
-		if (from.length) {
-			if (!root[cur]) {
-				root[cur] = {
-					type: 'object',
-					properties: {}
-				};
-			}
-			go(from, root[cur].properties, info);
-		} else {
-			root[cur] = info;
-		}
-	}
-
-	function split(str) {
-		return str.replace(/]([^\.$])/g, '].$1').split('.');
-	}
-
-	function encode(schema) {
-		var i,
-		    c,
-		    d,
-		    t,
-		    rtn,
-		    root,
-		    path = schema[0].to || schema[0].path;
-
-		if (split(path)[0] === '[]') {
-			rtn = { type: 'array' };
-			root = rtn;
-		} else {
-			rtn = { type: 'object', properties: {} };
-			root = rtn.properties;
-		}
-
-		for (i = 0, c = schema.length; i < c; i++) {
-			d = schema[i];
-
-			path = d.to || d.path;
-
-			t = { type: d.type };
-
-			if (d.from) {
-				t.alias = d.from;
-			}
-
-			go(split(path), root, t);
-		}
-
-		return rtn;
-	}
-
-	module.exports = encode;
-
-/***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var Path = __webpack_require__(5);
+	var Path = __webpack_require__(8);
 
 	var tests = [function (def, v, errors) {
-		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== def.type) {
+		if ((typeof v === 'undefined' ? 'undefined' : _typeof(v)) !== def.type && (def.required || v !== undefined)) {
 			errors.push({
 				path: def.path,
 				type: 'type',
@@ -652,11 +849,22 @@ var bmoorSchema =
 		var errors = [];
 
 		schema.forEach(function (def) {
-			new Path(def.path).exec(obj, function (v) {
-				tests.forEach(function (fn) {
-					fn(def, v, errors);
+			var arr = new Path(def.path).flatten(obj);
+
+			if (arr.length) {
+				arr.forEach(function (v) {
+					tests.forEach(function (fn) {
+						fn(def, v, errors);
+					});
 				});
-			});
+			} else if (def.required) {
+				errors.push({
+					path: def.path,
+					type: 'missing',
+					value: undefined,
+					expect: def.type
+				});
+			}
 		});
 
 		if (errors.length) {

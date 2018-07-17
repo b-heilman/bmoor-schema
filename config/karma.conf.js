@@ -12,6 +12,7 @@ module.exports = function(config) {
 
         // list of files / patterns to load in the browser
         files: [
+            'lib/polyfills.js',
             'node_modules/bmoor/dist/bmoor.js',
             'config/test.js',
             'dist/bmoor-schema.js',

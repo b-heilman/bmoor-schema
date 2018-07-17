@@ -21,7 +21,7 @@ describe('bmoor-schema::Path', function(){
 				]
 			};
 
-		expect( (new Path('eins[]zwei')).flatten( obj ) )
+		expect( (new Path('eins[].zwei')).flatten( obj ) )
 			.toEqual(['foo','bar']);
 	});
 
@@ -37,7 +37,7 @@ describe('bmoor-schema::Path', function(){
 				]
 			};
 
-		expect( (new Path('eins[]zwei[]')).flatten( obj ) )
+		expect( (new Path('eins[].zwei[]')).flatten( obj ) )
 			.toEqual(['foo','bar']);
 	});
 
@@ -59,7 +59,7 @@ describe('bmoor-schema::Path', function(){
 				sum += v;
 			};
 
-		( new Path('eins[]zwei[]value') ).exec( obj, fn )
+		( new Path('eins[].zwei[].value') ).exec( obj, fn )
 
 		expect( sum ).toBe( 10 );
 	});

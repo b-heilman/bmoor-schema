@@ -1,96 +1,181 @@
-describe('bmoor-schema.encode', function(){
-	var encode = bmoorSchema.encode;
+describe('bmoor-schema::schema', function(){
+	var encoding = bmoorSchema.encode,
+		encode = encoding.bmoorSchema,
+		translate = encoding.jsonSchema;
 
-	it('should work correctly with an object', function(){
-		var encoding = encode({
-				foo: 'bar',
-				arr: [
-					{ first: 1 },
-					{ second: 2 }
-				],
-				obj: {
-					foo: true,
-					'hello-world': 'hola',
-					'boop doop': 'ok',
-					'eins.zwei': 12,
-					well_ok: 'snake'
-				},
-				multi: [
-					[ 'val', 'ue' ]
-				]
+	it('should encode a basic object correctly', function(){
+		var info = encode({
+				eins: 1,
+				zwei: true,
+				drei: 'hello'
 			});
 
-		expect( encoding.length ).toBe( 8 );
+		expect( info ).toEqual([
+			{
+				path: 'eins',
+				type: 'number',
+				sample: 1
+			},
+			{
+				path: 'zwei',
+				type: 'boolean',
+				sample: true
+			},
+			{
+				path: 'drei',
+				type: 'string',
+				sample: 'hello'
+			}
+		]);
 
-		expect( encoding[0].path )
-			.toBe('foo');
-		expect( encoding[1].path )
-			.toBe('arr[].first');
-		expect( encoding[2].path )
-			.toBe('obj.foo');
-		expect( encoding[3].path )
-			.toBe('obj["hello-world"]');
-		expect( encoding[4].path )
-			.toBe('obj["boop doop"]');
-		expect( encoding[5].path )
-			.toBe('obj["eins.zwei"]');
-		expect( encoding[6].path )
-			.toBe('obj.well_ok');
-		expect( encoding[7].path )
-			.toBe('multi[][]');
-	});
-
-	it('should allow escaping override', function(){
-		var encoding = encode({
-				foo: 'bar',
-				arr: [
-					{ first: 1 },
-					{ second: 2 }
-				],
-				obj: {
-					foo: true,
-					'hello-world': 'hola',
-					'boop doop': 'ok',
-					'eins.zwei': 12,
-					well_ok: 'snake'
+		expect( translate(info) ).toEqual({
+			"$schema":"http://json-schema.org/schema#",
+			type: 'object',
+			required:[],
+			properties: {
+				eins: {
+					type: ['number','null']
 				},
-				multi: [
-					[ 'val', 'ue' ]
-				]
-			},/\./);
-
-		expect( encoding.length ).toBe( 8 );
-
-		expect( encoding[0].path )
-			.toBe('foo');
-		expect( encoding[1].path )
-			.toBe('arr[].first');
-		expect( encoding[2].path )
-			.toBe('obj.foo');
-		expect( encoding[3].path )
-			.toBe('obj.hello-world');
-		expect( encoding[4].path )
-			.toBe('obj.boop doop');
-		expect( encoding[5].path )
-			.toBe('obj["eins.zwei"]');
-		expect( encoding[6].path )
-			.toBe('obj.well_ok');
-		expect( encoding[7].path )
-			.toBe('multi[][]');
-	});
-
-	it('should ignore null and undefined values', function() {
-		var encoding = encode({
-			foo: 'bar',
-			nullObj: null,
-			undefinedObj: undefined
+				zwei: {
+					type: ['boolean','null']
+				},
+				drei: {
+					type: ['string','null']
+				}
+			}
 		});
 
-		expect(encoding.length).toBe(1);
-		expect(encoding).toEqual([{
-			path: 'foo',
-			type: 'string',
-			sample: 'bar'
-		}]);
+		info[0].path = 'test.eins';
+		info[1].path = 'test.zwei';
+
+		info[2].path = 'drei';
+
+		expect( translate(info) ).toEqual({
+			"$schema":"http://json-schema.org/schema#",
+			type: 'object',
+			required:[],
+			properties: {
+				test: {
+					type: ['object','null'],
+					required: [],
+					properties: {
+						eins: {
+							type: ['number','null']
+						},
+						zwei: {
+							type: ['boolean','null']
+						}
+					}
+				},
+				drei: {
+					type: ['string','null']
+				}
+			}
+		});
+	});
+
+	it('should encode a multi level object correctly', function(){
+		var info = encode({
+				eins: 1,
+				foo: {
+					zwei: true,
+					drei: 'hello'
+				}
+			});
+
+		expect( info ).toEqual([
+			{
+				path: 'eins',
+				type: 'number',
+				sample: 1
+			},
+			{
+				path: 'foo.zwei',
+				type: 'boolean',
+				sample: true
+			},
+			{
+				path: 'foo.drei',
+				type: 'string',
+				sample: 'hello'
+			}
+		]);
+
+		expect( translate(info) ).toEqual({
+			"$schema":"http://json-schema.org/schema#",
+			type: 'object',
+			required: [],
+			properties: {
+				eins: {
+					type: ['number','null']
+				},
+				foo: {
+					type: ['object','null'],
+					required: [],
+					properties: {
+						zwei: {
+							type: ['boolean','null']
+						},
+						drei: {
+							type: ['string','null']
+						}
+					}
+				}
+			}
+		});
+	});
+
+	it('should encode an array inside an object correctly', function(){
+		var info = encode({
+				eins: 1,
+				foo: [{
+					zwei: true,
+					drei: 'hello'
+				}]
+			});
+
+		expect( info ).toEqual([
+			{
+				path: 'eins',
+				type: 'number',
+				sample: 1
+			},
+			{
+				path: 'foo[].zwei',
+				type: 'boolean',
+				sample: true
+			},
+			{
+				path: 'foo[].drei',
+				type: 'string',
+				sample: 'hello'
+			}
+		]);
+
+		expect( translate(info) ).toEqual({
+			"$schema":"http://json-schema.org/schema#",
+			type: 'object',
+			required: [],
+			properties: {
+				eins: {
+					type: ['number','null']
+				},
+				foo: {
+					type: ['array','null'],
+					items: {
+						type: ['object','null'],
+						required: [],
+						properties: {
+							zwei: {
+								type: ['boolean','null']
+							},
+							drei: {
+								type: ['string','null']
+							}
+						}
+					}
+				}
+			}
+		});
 	});
 });
