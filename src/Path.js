@@ -1,78 +1,32 @@
-var bmoor = require('bmoor'),
+const bmoor = require('bmoor'),
 	makeGetter = bmoor.makeGetter,
-	makeSetter = bmoor.makeSetter;
+	// makeSetter = bmoor.makeSetter,
+	Writer = require('./path/Writer.js').default,
+	Reader = require('./path/Reader.js').default,
+	Tokenizer = require('./path/Tokenizer.js').default;
 
 class Path {
 	// normal path: foo.bar
 	// array path : foo[].bar
 	constructor( path ){
-		var end,
-			dex = path.indexOf('['),
-			args;
-
-		this.raw = path;
-
-		if ( dex === -1 ){
-			this.type = 'linear';
-		}else{
-			this.type = 'array';
-
-			end = path.indexOf( ']', dex );
-
-			this.op = path.substring( dex+1, end );
-			args = this.op.indexOf(':');
-
-			if ( path.charAt(end+1) === '.' ){
-				end++;
-			}
-
-			this.remainder = path.substr( end + 1 );
-
-			if ( args === -1 ){
-				this.args = '';
-			}else{
-				this.args = this.op.substr( args+1 );
-				this.op = this.op.substring( 0, args );
-			}
-
-			path = path.substr( 0, dex );
-		}
-
-		this.leading = path;
-
-		if ( path === '' ){
-			this.path = [];
-		}else{
-			this.path = path.split('.');
-			this.set = makeSetter( this.path );
-		}
-
-		// if we want to, we can optimize path performance
-		this.get = makeGetter( this.path );
+		this.tokenizer = new Tokenizer(path);
 	}
 
 	// converts something like [{a:1},{a:2}] to [1,2]
 	// when given [].a
 	flatten( obj ){
-		var t,
-			rtn,
-			next;
+		var target = [obj],
+			chunks = this.tokenizer.accessors();
 
-		if ( this.remainder === undefined ){
-			return [ this.get(obj) ];
-		}else{
-			t = this.get(obj);
-			rtn = [];
-			next = new Path( this.remainder );
+		while( chunks.length ){
+			let chunk = chunks.shift(),
+				getter = makeGetter(chunk);
 
-			if ( t ){
-				t.forEach(function( o ){
-					rtn = rtn.concat( next.flatten(o) );
-				});
-			}
-
-			return rtn;
+			target = target.map(getter)
+				.reduce((rtn,arr) => rtn.concat(arr), []);
 		}
+
+		return target;
 	}
 
 	// call this method against 
@@ -80,6 +34,14 @@ class Path {
 		this.flatten( obj ).forEach(function( o ){
 			fn( o );
 		});
+	}
+
+	getReader(){
+		return new Reader(this.tokenizer);
+	}
+
+	getWriter(){
+		return new Writer(this.tokenizer);
 	}
 }
 

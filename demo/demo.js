@@ -59,9 +59,12 @@
 	module.exports = {
 		encode: __webpack_require__(2),
 		Mapper: __webpack_require__(24),
-		Mapping: __webpack_require__(26),
+		Mapping: __webpack_require__(28),
 		Path: __webpack_require__(25),
-		validate: __webpack_require__(27)
+		path: {
+			Tokenizer: __webpack_require__(23).default
+		},
+		validate: __webpack_require__(29)
 	};
 
 /***/ },
@@ -2554,7 +2557,11 @@
 	        char = path.charAt(0),
 	        more = true;
 
-	    if (char === '[') {
+	    var access = null;
+
+	    if (path.charAt(1) === ']') {
+	        // don't do anything
+	    } else if (char === '[') {
 	        var count = 0;
 
 	        do {
@@ -2567,6 +2574,8 @@
 	            i++;
 	            char = path.charAt(i);
 	        } while (count && i < c);
+
+	        access = path.substring(2, i - 2);
 	    } else {
 	        do {
 	            if (char === '.' || char === '[') {
@@ -2576,6 +2585,8 @@
 	                char = path.charAt(i);
 	            }
 	        } while (more && i < c);
+
+	        access = path.substring(0, i);
 	    }
 
 	    var token = path.substring(0, i),
@@ -2598,7 +2609,8 @@
 	        value: token,
 	        next: next,
 	        done: false,
-	        isArray: isArray
+	        isArray: isArray,
+	        accessor: access
 	    };
 	}
 
@@ -2635,6 +2647,66 @@
 	                };
 	            }
 	        }
+	    }, {
+	        key: 'accessors',
+	        value: function accessors() {
+	            var rtn = [],
+	                cur = null;
+
+	            for (var i = 0, c = this.tokens.length; i < c; i++) {
+	                var token = this.tokens[i];
+
+	                if (cur) {
+	                    cur.push(token.accessor);
+	                } else if (token.accessor) {
+	                    cur = [token.accessor];
+	                } else {
+	                    cur = [];
+	                }
+
+	                if (token.isArray) {
+	                    rtn.push(cur);
+	                    cur = null;
+	                }
+	            }
+
+	            if (cur) {
+	                rtn.push(cur);
+	            }
+
+	            return rtn;
+	        }
+	    }, {
+	        key: 'chunk',
+	        value: function chunk() {
+	            var rtn = [],
+	                cur = null;
+
+	            for (var i = 0, c = this.tokens.length; i < c; i++) {
+	                var token = this.tokens[i];
+
+	                if (cur) {
+	                    if (token.value.charAt(0) === '[') {
+	                        cur += token.value;
+	                    } else {
+	                        cur += '.' + token.value;
+	                    }
+	                } else {
+	                    cur = token.value;
+	                }
+
+	                if (token.isArray) {
+	                    rtn.push(cur);
+	                    cur = null;
+	                }
+	            }
+
+	            if (cur) {
+	                rtn.push(cur);
+	            }
+
+	            return rtn;
+	        }
 	    }]);
 
 	    return Tokenizer;
@@ -2656,7 +2728,7 @@
 
 	var Path = __webpack_require__(25),
 	    bmoor = __webpack_require__(4),
-	    Mapping = __webpack_require__(26);
+	    Mapping = __webpack_require__(28);
 
 	function stack(fn, old) {
 		if (old) {
@@ -2740,7 +2812,11 @@
 
 	var bmoor = __webpack_require__(4),
 	    makeGetter = bmoor.makeGetter,
-	    makeSetter = bmoor.makeSetter;
+
+	// makeSetter = bmoor.makeSetter,
+	Writer = __webpack_require__(26).default,
+	    Reader = __webpack_require__(27).default,
+	    Tokenizer = __webpack_require__(23).default;
 
 	var Path = function () {
 		// normal path: foo.bar
@@ -2748,49 +2824,7 @@
 		function Path(path) {
 			_classCallCheck(this, Path);
 
-			var end,
-			    dex = path.indexOf('['),
-			    args;
-
-			this.raw = path;
-
-			if (dex === -1) {
-				this.type = 'linear';
-			} else {
-				this.type = 'array';
-
-				end = path.indexOf(']', dex);
-
-				this.op = path.substring(dex + 1, end);
-				args = this.op.indexOf(':');
-
-				if (path.charAt(end + 1) === '.') {
-					end++;
-				}
-
-				this.remainder = path.substr(end + 1);
-
-				if (args === -1) {
-					this.args = '';
-				} else {
-					this.args = this.op.substr(args + 1);
-					this.op = this.op.substring(0, args);
-				}
-
-				path = path.substr(0, dex);
-			}
-
-			this.leading = path;
-
-			if (path === '') {
-				this.path = [];
-			} else {
-				this.path = path.split('.');
-				this.set = makeSetter(this.path);
-			}
-
-			// if we want to, we can optimize path performance
-			this.get = makeGetter(this.path);
+			this.tokenizer = new Tokenizer(path);
 		}
 
 		// converts something like [{a:1},{a:2}] to [1,2]
@@ -2800,23 +2834,19 @@
 		_createClass(Path, [{
 			key: 'flatten',
 			value: function flatten(obj) {
-				var t, rtn, next;
+				var target = [obj],
+				    chunks = this.tokenizer.accessors();
 
-				if (this.remainder === undefined) {
-					return [this.get(obj)];
-				} else {
-					t = this.get(obj);
-					rtn = [];
-					next = new Path(this.remainder);
+				while (chunks.length) {
+					var chunk = chunks.shift(),
+					    getter = makeGetter(chunk);
 
-					if (t) {
-						t.forEach(function (o) {
-							rtn = rtn.concat(next.flatten(o));
-						});
-					}
-
-					return rtn;
+					target = target.map(getter).reduce(function (rtn, arr) {
+						return rtn.concat(arr);
+					}, []);
 				}
+
+				return target;
 			}
 
 			// call this method against 
@@ -2828,6 +2858,16 @@
 					fn(o);
 				});
 			}
+		}, {
+			key: 'getReader',
+			value: function getReader() {
+				return new Reader(this.tokenizer);
+			}
+		}, {
+			key: 'getWriter',
+			value: function getWriter() {
+				return new Writer(this.tokenizer);
+			}
 		}]);
 
 		return Path;
@@ -2837,6 +2877,66 @@
 
 /***/ },
 /* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var makeSetter = __webpack_require__(4).makeSetter;
+
+	var Writer = function Writer(tokenizer, pos) {
+		_classCallCheck(this, Writer);
+
+		if (!pos) {
+			pos = 0;
+		}
+
+		this.token = tokenizer.tokens[pos];
+
+		if (pos + 1 < tokenizer.tokens.length) {
+			this.child = new Writer(tokenizer, pos + 1);
+		}
+
+		this.set = makeSetter(this.token.accessor);
+	};
+
+	module.exports = {
+		default: Writer
+	};
+
+/***/ },
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var makeGetter = __webpack_require__(4).makeGetter;
+
+	var Reader = function Reader(tokenizer, pos) {
+		_classCallCheck(this, Reader);
+
+		if (!pos) {
+			pos = 0;
+		}
+
+		this.token = tokenizer.tokens[pos];
+
+		if (pos + 1 < tokenizer.tokens.length) {
+			this.child = new Reader(tokenizer, pos + 1);
+		}
+
+		this.get = makeGetter(this.token.accessor);
+	};
+
+	module.exports = {
+		default: Reader
+	};
+
+/***/ },
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3013,7 +3113,7 @@
 	module.exports = Mapping;
 
 /***/ },
-/* 27 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3039,18 +3139,18 @@
 		schema.forEach(function (def) {
 			var arr = new Path(def.path).flatten(obj);
 
-			if (arr.length) {
-				arr.forEach(function (v) {
-					tests.forEach(function (fn) {
-						fn(def, v, errors);
-					});
-				});
-			} else if (def.required) {
+			if (def.required && arr.length === 1 && arr[0] === undefined) {
 				errors.push({
 					path: def.path,
 					type: 'missing',
 					value: undefined,
 					expect: def.type
+				});
+			} else if (arr.length) {
+				arr.forEach(function (v) {
+					tests.forEach(function (fn) {
+						fn(def, v, errors);
+					});
 				});
 			}
 		});

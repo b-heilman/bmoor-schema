@@ -1,4 +1,5 @@
 describe('bmoor-schema.Mapper', function(){
+	/*
 	var Mapper = bmoorSchema.Mapper;
 
 	it('should be defined', function(){
@@ -358,4 +359,5 @@ describe('bmoor-schema.Mapper', function(){
 			});
 		});
 	});
+	*/
 });

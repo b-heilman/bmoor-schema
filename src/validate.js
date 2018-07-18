@@ -19,18 +19,18 @@ function validate( schema, obj ){
 	schema.forEach(function( def ){
 		var arr = (new Path(def.path)).flatten( obj );
 
-		if ( arr.length ){
-			arr.forEach(function( v ){
-				tests.forEach(function( fn ){
-					fn( def, v, errors );
-				});
-			});
-		}else if (def.required){
+		if (def.required && arr.length === 1 && arr[0] === undefined) {
 			errors.push({
 				path: def.path,
 				type: 'missing',
 				value: undefined,
 				expect: def.type
+			});
+		} else if (arr.length) {
+			arr.forEach(function( v ){
+				tests.forEach(function( fn ){
+					fn( def, v, errors );
+				});
 			});
 		}
 	});

@@ -1,4 +1,5 @@
 describe('bmoor-schema.Mapper', function(){
+	/*
 	var Mapping = bmoorSchema.Mapping;
 
 	it('should be defined', function(){
@@ -208,4 +209,5 @@ describe('bmoor-schema.Mapper', function(){
 			expect( to.eins ).toEqual( [2,3,4,5] );
 		});
 	});
+	*/
 });
