@@ -1,4 +1,4 @@
-var Path = require('./Path.js');
+var Path = require('./Path.js').default;
 
 var tests = [
 		function( def, v, errors ){
@@ -44,4 +44,7 @@ function validate( schema, obj ){
 
 validate.$ops = tests;
 
-module.exports = validate;
+module.exports = {
+	default: validate,
+	tests: tests
+};

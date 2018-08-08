@@ -1,4 +1,4 @@
-var Path = require('./Path.js'),
+const Path = require('./Path.js').default,
 	bmoor = require('bmoor'),
 	Mapping = require('./Mapping.js');
 
@@ -47,16 +47,20 @@ class Mapper {
 	addMapping( toPath, fromPath ){
 		var to = new Path( toPath ),
 			from = new Path( fromPath ),
-			dex = to.leading + '-' + from.leading,
-			mapping = this.mappings[dex]; 
+			fromNext = from.remainder();
 
-		if ( mapping ){
-			mapping.addChild( to.remainder, from.remainder );
-		}else{
-			mapping = new Mapping( to, from );
-			this.mappings[ dex ] = mapping;
+		if ( fromNext ){
+			let dex = from.root()+'=>'+to.root(),
+				mapping = this.mappings[dex];
 
-			this.go = stack( mapping.go, this.go );
+			if ( mapping ){
+				mapping.addChild( to, from );
+			}else{
+				mapping = new Mapping( to, from );
+				this.mappings[ dex ] = mapping;
+
+				this.process = stack( mapping.process, this.process );
+			}
 		}
 	}
 }

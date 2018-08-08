@@ -7,9 +7,7 @@ var fs = require('fs'),
 		demoDir: 'demo/',
 		configDir: 'config/',
 		jsSrc: ['src/*.js','src/**/*.js','!src/**/*.spec.js'],
-		externals: {
-			'bmoor': 'bmoor'
-		}
+		externals: {}
 	};
 
 config.karmaConfig = config.configDir+'karma.conf.js';

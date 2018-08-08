@@ -9,14 +9,22 @@ class Path {
 	// normal path: foo.bar
 	// array path : foo[].bar
 	constructor( path ){
-		this.tokenizer = new Tokenizer(path);
+		if ( path instanceof Tokenizer ){
+			this.tokenizer = path;
+		}else{
+			this.tokenizer = new Tokenizer(path);
+		}
+	}
+
+	_makeChild(path){
+		return new (this.constructor)(path);
 	}
 
 	// converts something like [{a:1},{a:2}] to [1,2]
 	// when given [].a
 	flatten( obj ){
 		var target = [obj],
-			chunks = this.tokenizer.accessors();
+			chunks = this.tokenizer.getAccessors();
 
 		while( chunks.length ){
 			let chunk = chunks.shift(),
@@ -31,9 +39,7 @@ class Path {
 
 	// call this method against 
 	exec( obj, fn ){
-		this.flatten( obj ).forEach(function( o ){
-			fn( o );
-		});
+		this.flatten( obj ).forEach(fn);
 	}
 
 	getReader(){
@@ -43,6 +49,16 @@ class Path {
 	getWriter(){
 		return new Writer(this.tokenizer);
 	}
+
+	root(accessors){
+		return this.tokenizer.root(accessors);
+	}
+
+	remainder(){
+		return this._makeChild(this.tokenizer.remainder());
+	}
 }
 
-module.exports = Path;
+module.exports = {
+	default: Path
+};

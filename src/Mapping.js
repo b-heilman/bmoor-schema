@@ -1,4 +1,4 @@
-var Path = require('./Path.js');
+var Path = require('./Path.js').default;
 
 function all( next ){
 	return function( toObj, fromObj ){
@@ -167,4 +167,7 @@ class Mapping {
 	}
 }
 
-module.exports = Mapping;
+module.exports = {
+	default: Mapping
+};
+

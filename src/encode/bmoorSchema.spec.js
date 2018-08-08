@@ -1,5 +1,5 @@
 describe('bmoor-schema.encode.bmoorSchema', function(){
-	var encode = bmoorSchema.encode.bmoorSchema;
+	var encode = require('./bmoorSchema.js').default;
 
 	it('should work correctly with an object', function(){
 		var encoding = encode({
@@ -13,7 +13,7 @@ describe('bmoor-schema.encode.bmoorSchema', function(){
 					'hello-world': 'hola',
 					'boop doop': 'ok',
 					'eins.zwei': 12,
-					well_ok: 'snake'
+					'well_ok': 'snake'
 				},
 				multi: [
 					[ 'val', 'ue' ]
@@ -52,7 +52,7 @@ describe('bmoor-schema.encode.bmoorSchema', function(){
 					'hello-world': 'hola',
 					'boop doop': 'ok',
 					'eins.zwei': 12,
-					well_ok: 'snake'
+					'well_ok': 'snake'
 				},
 				multi: [
 					[ 'val', 'ue' ]

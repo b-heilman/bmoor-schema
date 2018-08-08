@@ -1,5 +1,5 @@
 describe('bmoor-schema::Path', function(){
-	var Path = bmoorSchema.Path;
+	var Path = require('./Path.js').default;
 
 	it('should not blow up on something that does not need flattened', function(){
 		var obj = {
@@ -72,7 +72,7 @@ describe('bmoor-schema::Path', function(){
 				sum += v;
 			};
 
-		( new Path('eins[].zwei[].value') ).exec( obj, fn )
+		( new Path('eins[].zwei[].value') ).exec( obj, fn );
 
 		expect( sum ).toBe( 10 );
 	});

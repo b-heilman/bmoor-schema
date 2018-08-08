@@ -1,5 +1,6 @@
 describe('bmoor-schema::schema', function(){
-	var encoding = bmoorSchema.encode,
+	var bmoorSchema = require('../bmoor-schema.js'),
+		encoding = bmoorSchema.encode,
 		encode = encoding.bmoorSchema,
 		translate = encoding.jsonSchema;
 
@@ -29,7 +30,7 @@ describe('bmoor-schema::schema', function(){
 		]);
 
 		expect( translate(info) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
+			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required:[],
 			properties: {
@@ -51,7 +52,7 @@ describe('bmoor-schema::schema', function(){
 		info[2].path = 'drei';
 
 		expect( translate(info) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
+			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required:[],
 			properties: {
@@ -102,7 +103,7 @@ describe('bmoor-schema::schema', function(){
 		]);
 
 		expect( translate(info) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
+			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],
 			properties: {
@@ -153,7 +154,7 @@ describe('bmoor-schema::schema', function(){
 		]);
 
 		expect( translate(info) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
+			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],
 			properties: {

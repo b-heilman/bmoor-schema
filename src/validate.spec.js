@@ -1,5 +1,5 @@
 describe('bmoor-schema::validate', function(){
-	var validate = bmoorSchema.validate;
+	var validate = require('./validate.js').default;
 
 	it('return null with no errors', function(){
 		var schema = [{

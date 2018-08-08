@@ -1,5 +1,5 @@
 describe('bmoor-schema.encode.jsonSchema', function(){
-	var encode = bmoorSchema.encode.jsonSchema;
+	var encode = require('./jsonSchema.js').default;
 
 	it('should handle brackets correctly', function() { 
 		var fields = [
@@ -51,74 +51,74 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 		];
 
 		expect( encode(fields) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
-			"type":"object",
-			"required":[],
-			"properties":{
-				"root": {
-					type:["object","null"],
+			'$schema':'http://json-schema.org/schema#',
+			'type':'object',
+			'required':[],
+			'properties':{
+				'root': {
+					type:['object','null'],
 					required: [
-						"foo-bar-2"
+						'foo-bar-2'
 					],
 					properties: {
-						"foo-bar-1": {
-							type:["string", "null"]
+						'foo-bar-1': {
+							type:['string', 'null']
 						},
-						"foo-bar-2": {
-							type: ["string"]
+						'foo-bar-2': {
+							type: ['string']
 						},
-						"foo-bar-3": {
-							type:["object", "null"],
-							required: ["follow"],
+						'foo-bar-3': {
+							type:['object', 'null'],
+							required: ['follow'],
 							properties: {
 								follow: {
-									"type":["string"]
+									'type':['string']
 								}
 							}
 						}
 					}
 				},
-				"arr1": {
-					type:["array","null"],
+				'arr1': {
+					type:['array','null'],
 					items: {
-						type: ["string", "null"]
+						type: ['string', 'null']
 					} 
 				},
-				"arr2": {
-					type:["array","null"],
+				'arr2': {
+					type:['array','null'],
 					minItems: 1,
 					items: {
-						type: ["string"]
+						type: ['string']
 					} 
 				},
-				"boop": {
-					type:["object","null"],
+				'boop': {
+					type:['object','null'],
 					required: [],
 					properties: {
 						arr3: {
-							type: ["array","null"],
+							type: ['array','null'],
 							items: {
-								type: ["string","null"]
+								type: ['string','null']
 							}
 						},
 						arr4: {
-							type: ["array","null"],
+							type: ['array','null'],
 							minItems: 1,
 							items: {
-								type: ["string"]
+								type: ['string']
 							}
 						},
 						arr5: {
-							type: ["array","null"],
+							type: ['array','null'],
 							minItems: 1,
 							items: {
-								type: ["object","null"],
+								type: ['object','null'],
 								required: [
-									"prop"
+									'prop'
 								],
 								properties: {
 									prop: {
-										type: ["string"]
+										type: ['string']
 									}
 								}
 							}
@@ -126,13 +126,13 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 					}
 				},
 				multi: {
-					type: ["array","null"],
+					type: ['array','null'],
 					minItems: 1,
 					items: {
-						type: ["array","null"],
+						type: ['array','null'],
 						minItems: 1,
 						items: {
-							type: ["string"]
+							type: ['string']
 						}
 					}
 				}
@@ -203,46 +203,46 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 		];
 
 		expect( encode(fields) ).toEqual({
-			"$schema":"http://json-schema.org/schema#",
-			"type":"object",
-			"required":[],
-			"properties":{
-				"attributes":{
-					type:["object","null"],
+			'$schema':'http://json-schema.org/schema#',
+			'type':'object',
+			'required':[],
+			'properties':{
+				'attributes':{
+					type:['object','null'],
 					required:[],
 					properties:{
 						hostname:{
-							type: ["string", "null"]
+							type: ['string', 'null']
 						},
 						networkCarrier:{
-							"type": ["string", "null"]
+							'type': ['string', 'null']
 						},
 						authenticationStatus:{
-							"type": ["int", "null"]
+							'type': ['int', 'null']
 						},
 						countryCode:{
-							"type": ["array", "null"],
-							"items": {
-								"type": ["string", "null"]
+							'type': ['array', 'null'],
+							'items': {
+								'type': ['string', 'null']
 							}
 						},
 						serviceProviderPartnerId:{
-							"type": ["string", "null"]
+							'type': ['string', 'null']
 						},
 						EVENT_TYPE:{
-							"type": ["long", "null"]
+							'type': ['long', 'null']
 						},
 						FAMILY:{
-							"type": ["boolean", "null"]
+							'type': ['boolean', 'null']
 						},
 						TIMESTAMP:{
-							type: ["string", "null"]
+							type: ['string', 'null']
 						},
 						customerGUID:{
-							type: ["string", "null"]
+							type: ['string', 'null']
 					 	},
 						uuid: {
-							type: ["double", "null"],
+							type: ['double', 'null'],
 							encrypted:true
 						}
 					}
