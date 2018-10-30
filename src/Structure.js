@@ -16,8 +16,8 @@ class Structure {
 			path = new Path(path);
 		}
 
-		let root = path.root(true),
-			remainder = path.remainder();
+		let root = path.root(true);
+		let remainder = path.remainder();
 
 		if (remainder){
 			let child = this.children[root];

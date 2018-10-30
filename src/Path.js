@@ -1,8 +1,8 @@
 const bmoor = require('bmoor'),
 	makeGetter = bmoor.makeGetter,
 	// makeSetter = bmoor.makeSetter,
-	Writer = require('./path/Writer.js').default,
-	Reader = require('./path/Reader.js').default,
+	// Writer = require('./path/Writer.js').default,
+	// Reader = require('./path/Reader.js').default,
 	Tokenizer = require('./path/Tokenizer.js').default;
 
 class Path {
@@ -14,6 +14,9 @@ class Path {
 		}else{
 			this.tokenizer = new Tokenizer(path);
 		}
+
+		this.root = this.tokenizer.tokens[0];
+		this.hasArray = this.root.isArray;
 	}
 
 	_makeChild(path){
@@ -38,16 +41,8 @@ class Path {
 	}
 
 	// call this method against 
-	exec( obj, fn ){
+	exec(obj, fn){
 		this.flatten( obj ).forEach(fn);
-	}
-
-	getReader(){
-		return new Reader(this.tokenizer);
-	}
-
-	getWriter(){
-		return new Writer(this.tokenizer);
 	}
 
 	root(accessors){

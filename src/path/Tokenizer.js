@@ -95,6 +95,10 @@ class Tokenizer{
 		this.pos = 0;
 	}
 
+	hasNext(){
+		return this.tokens.length > this.pos + 1; 
+	}
+
 	next(){
 		var token = this.tokens[this.pos];
 
@@ -141,7 +145,7 @@ class Tokenizer{
 			this.accessors = rtn;
 		}
 
-		return rtn;
+		return rtn.slice(0);
 	}
 
 	chunk(){

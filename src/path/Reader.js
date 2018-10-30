@@ -2,18 +2,18 @@
 const makeGetter = require('bmoor').makeGetter;
 
 class Reader{
-	constructor(tokenizer,pos){
-		if (!pos){
-			pos = 0;
-		}
+	constructor(tokenizer){
+		this.token = tokenizer.next();
 
-		this.token = tokenizer.tokens[pos];
-
-		if ( pos + 1 < tokenizer.tokens.length ){
-			this.child = new Reader(tokenizer,pos+1);
+		if (tokenizer.hasNext()){
+			this.child = this._makeChild(tokenizer);
 		}
 
 		this.get = makeGetter(this.token.accessor);
+	}
+
+	_makeChild(tokenizer){
+		return new (this.constructor)(tokenizer);
 	}
 }
 

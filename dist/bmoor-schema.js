@@ -564,9 +564,9 @@ var bmoor = __webpack_require__(1),
     makeGetter = bmoor.makeGetter,
 
 // makeSetter = bmoor.makeSetter,
-Writer = __webpack_require__(27).default,
-    Reader = __webpack_require__(28).default,
-    Tokenizer = __webpack_require__(3).default;
+// Writer = require('./path/Writer.js').default,
+// Reader = require('./path/Reader.js').default,
+Tokenizer = __webpack_require__(3).default;
 
 var Path = function () {
 	// normal path: foo.bar
@@ -579,6 +579,9 @@ var Path = function () {
 		} else {
 			this.tokenizer = new Tokenizer(path);
 		}
+
+		this.root = this.tokenizer.tokens[0];
+		this.hasArray = this.root.isArray;
 	}
 
 	_createClass(Path, [{
@@ -614,16 +617,6 @@ var Path = function () {
 		key: 'exec',
 		value: function exec(obj, fn) {
 			this.flatten(obj).forEach(fn);
-		}
-	}, {
-		key: 'getReader',
-		value: function getReader() {
-			return new Reader(this.tokenizer);
-		}
-	}, {
-		key: 'getWriter',
-		value: function getWriter() {
-			return new Writer(this.tokenizer);
 		}
 	}, {
 		key: 'root',
@@ -754,6 +747,11 @@ var Tokenizer = function () {
 			this.pos = 0;
 		}
 	}, {
+		key: 'hasNext',
+		value: function hasNext() {
+			return this.tokens.length > this.pos + 1;
+		}
+	}, {
 		key: 'next',
 		value: function next() {
 			var token = this.tokens[this.pos];
@@ -802,7 +800,7 @@ var Tokenizer = function () {
 				this.accessors = rtn;
 			}
 
-			return rtn;
+			return rtn.slice(0);
 		}
 	}, {
 		key: 'chunk',
@@ -1152,7 +1150,7 @@ module.exports = {
 	path: {
 		Tokenizer: __webpack_require__(3).default
 	},
-	validate: __webpack_require__(29).default
+	validate: __webpack_require__(27).default
 };
 
 /***/ }),
@@ -3196,68 +3194,6 @@ module.exports = Mapper;
 
 /***/ }),
 /* 27 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var makeSetter = __webpack_require__(1).makeSetter;
-
-var Writer = function Writer(tokenizer, pos) {
-	_classCallCheck(this, Writer);
-
-	if (!pos) {
-		pos = 0;
-	}
-
-	this.token = tokenizer.tokens[pos];
-
-	if (pos + 1 < tokenizer.tokens.length) {
-		this.child = new Writer(tokenizer, pos + 1);
-	}
-
-	this.set = makeSetter(this.token.accessor);
-};
-
-module.exports = {
-	default: Writer
-};
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var makeGetter = __webpack_require__(1).makeGetter;
-
-var Reader = function Reader(tokenizer, pos) {
-	_classCallCheck(this, Reader);
-
-	if (!pos) {
-		pos = 0;
-	}
-
-	this.token = tokenizer.tokens[pos];
-
-	if (pos + 1 < tokenizer.tokens.length) {
-		this.child = new Reader(tokenizer, pos + 1);
-	}
-
-	this.get = makeGetter(this.token.accessor);
-};
-
-module.exports = {
-	default: Reader
-};
-
-/***/ }),
-/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
