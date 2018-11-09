@@ -61,7 +61,7 @@ var bmoorSchema =
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 6);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -535,17 +535,17 @@ module.exports = {
 
 var bmoor = Object.create(__webpack_require__(0));
 
-bmoor.dom = __webpack_require__(10);
-bmoor.data = __webpack_require__(11);
-bmoor.flow = __webpack_require__(12);
-bmoor.array = __webpack_require__(15);
-bmoor.build = __webpack_require__(16);
-bmoor.object = __webpack_require__(20);
-bmoor.string = __webpack_require__(21);
-bmoor.promise = __webpack_require__(22);
+bmoor.dom = __webpack_require__(9);
+bmoor.data = __webpack_require__(10);
+bmoor.flow = __webpack_require__(11);
+bmoor.array = __webpack_require__(14);
+bmoor.build = __webpack_require__(15);
+bmoor.object = __webpack_require__(19);
+bmoor.string = __webpack_require__(20);
+bmoor.promise = __webpack_require__(21);
 
-bmoor.Memory = __webpack_require__(23);
-bmoor.Eventing = __webpack_require__(24);
+bmoor.Memory = __webpack_require__(22);
+bmoor.Eventing = __webpack_require__(23);
 
 module.exports = bmoor;
 
@@ -566,7 +566,7 @@ var bmoor = __webpack_require__(1),
 // makeSetter = bmoor.makeSetter,
 // Writer = require('./path/Writer.js').default,
 // Reader = require('./path/Reader.js').default,
-Tokenizer = __webpack_require__(3).default;
+Tokenizer = __webpack_require__(4).default;
 
 var Path = function () {
 	// normal path: foo.bar
@@ -639,6 +639,66 @@ module.exports = {
 
 /***/ }),
 /* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function (cb, min, max, settings) {
+	var ctx, args, next, limit, timeout;
+
+	if (!settings) {
+		settings = {};
+	}
+
+	function fire() {
+		limit = null;
+		cb.apply(settings.context || ctx, args);
+	}
+
+	function run() {
+		var now = Date.now();
+
+		if (now >= limit || now >= next) {
+			fire();
+		} else {
+			timeout = setTimeout(run, Math.min(limit, next) - now);
+		}
+	}
+
+	var fn = function windowed() {
+		var now = Date.now();
+
+		ctx = this;
+		args = arguments;
+		next = now + min;
+
+		if (!limit) {
+			limit = now + max;
+			timeout = setTimeout(run, min);
+		}
+	};
+
+	fn.clear = function () {
+		clearTimeout(timeout);
+		timeout = null;
+		limit = null;
+	};
+
+	fn.flush = function () {
+		fire();
+		fn.clear();
+	};
+
+	fn.shift = function (diff) {
+		limit += diff;
+	};
+
+	return fn;
+};
+
+/***/ }),
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -887,244 +947,13 @@ module.exports = {
 };
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = function (cb, min, max, settings) {
-	var ctx, args, next, limit, timeout;
-
-	if (!settings) {
-		settings = {};
-	}
-
-	function fire() {
-		limit = null;
-		cb.apply(settings.context || ctx, args);
-	}
-
-	function run() {
-		var now = Date.now();
-
-		if (now >= limit || now >= next) {
-			fire();
-		} else {
-			timeout = setTimeout(run, Math.min(limit, next) - now);
-		}
-	}
-
-	var fn = function windowed() {
-		var now = Date.now();
-
-		ctx = this;
-		args = arguments;
-		next = now + min;
-
-		if (!limit) {
-			limit = now + max;
-			timeout = setTimeout(run, min);
-		}
-	};
-
-	fn.clear = function () {
-		clearTimeout(timeout);
-		timeout = null;
-		limit = null;
-	};
-
-	fn.flush = function () {
-		fire();
-		fn.clear();
-	};
-
-	fn.shift = function (diff) {
-		limit += diff;
-	};
-
-	return fn;
-};
-
-/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Path = __webpack_require__(2).default;
-
-function all(next) {
-	return function (toObj, fromObj) {
-		var i, c, dex, t;
-
-		for (i = 0, c = fromObj.length; i < c; i++) {
-			t = {};
-			dex = toObj.length;
-
-			toObj.push(t);
-
-			next(t, fromObj[i], toObj, dex);
-		}
-	};
-}
-
-var arrayMethods = {
-	'': all,
-	'*': all,
-	'merge': function merge(next) {
-		return function (toObj, fromObj, toRoot, toVar) {
-			var i, c, dex, t;
-
-			if (fromObj.length) {
-				next(toObj, fromObj[0], toRoot, toVar);
-
-				for (i = 1, c = fromObj.length; i < c; i++) {
-					t = {};
-					dex = toRoot.length;
-
-					toRoot.push(t);
-
-					next(t, fromObj[i], toRoot, dex);
-				}
-			}
-		};
-	},
-	'first': function first(next) {
-		return function (toObj, fromObj, toRoot, toVar) {
-			var t = {};
-
-			toRoot[toVar] = t;
-
-			next(t, fromObj[0], toRoot, toVar);
-		};
-	},
-	'last': function last(next) {
-		return function (toObj, fromObj, toRoot, toVar) {
-			var t = {};
-
-			toRoot[toVar] = t;
-
-			next(t, fromObj[fromObj.length - 1], toRoot, toVar);
-		};
-	},
-	'pick': function pick(next, args) {
-		return function (toObj, fromObj, toRoot, toVar) {
-			var t = {},
-			    dex = parseInt(args, 10);
-
-			toRoot[toVar] = t;
-
-			next(t, fromObj[dex], toRoot, toVar);
-		};
-	}
-};
-
-function buildArrayMap(to, from, next) {
-	var fn = arrayMethods[to.op](next, to.args);
-
-	if (to.path.length) {
-		return function (toObj, fromObj) {
-			var t = [],
-			    parent = to.set(toObj, t);
-
-			fn(t, from.get(fromObj), parent, to.path[to.path.length - 1]);
-		};
-	} else {
-		return function (toObj, fromObj, toRoot, toVar) {
-			var t = [],
-			    myRoot;
-
-			if (toRoot) {
-				t = [];
-				toRoot[toVar] = t;
-				myRoot = toRoot;
-			} else {
-				// this must be when an array leads
-				myRoot = t = toObj;
-			}
-
-			fn(t, from.get(fromObj), myRoot, toVar);
-		};
-	}
-}
-
-function stackChildren(old, fn) {
-	if (old) {
-		return function (toObj, fromObj, toRoot, toVar) {
-			fn(toObj, fromObj, toRoot, toVar);
-			old(toObj, fromObj, toRoot, toVar);
-		};
-	} else {
-		return fn;
-	}
-}
-
-var Mapping = function () {
-	function Mapping(toPath, fromPath) {
-		var _this = this;
-
-		_classCallCheck(this, Mapping);
-
-		var to = toPath instanceof Path ? toPath : new Path(toPath),
-		    from = fromPath instanceof Path ? fromPath : new Path(fromPath);
-
-		this.chidren = {};
-
-		if (to.type === 'linear' && from.type === to.type) {
-			if (to.path.length) {
-				this.go = function (toObj, fromObj) {
-					to.set(toObj, from.get(fromObj));
-				};
-			} else if (from.path.length) {
-				this.go = function (ignore, fromObj, toRoot, i) {
-					toRoot[i] = from.get(fromObj);
-				};
-			} else {
-				this.go = function (ignore, value, toRoot, i) {
-					toRoot[i] = value;
-				};
-			}
-		} else if (to.type === 'array' && from.type === to.type) {
-			this.addChild(to.remainder, from.remainder);
-			this.go = buildArrayMap(to, from, function (toObj, fromObj, toRoot, toVar) {
-				_this.callChildren(toObj, fromObj, toRoot, toVar);
-			});
-		} else {
-			throw new Error('both paths needs same amount of array hooks');
-		}
-	}
-
-	_createClass(Mapping, [{
-		key: 'addChild',
-		value: function addChild(toPath, fromPath) {
-			var child,
-			    to = new Path(toPath),
-			    from = new Path(fromPath),
-			    dex = to.leading + '-' + from.leading;
-
-			child = this.chidren[dex];
-
-			if (child) {
-				child.addChild(to.remainder, from.remainder);
-			} else {
-				child = new Mapping(to, from);
-				this.callChildren = stackChildren(this.callChildren, child.go);
-			}
-		}
-	}]);
-
-	return Mapping;
-}();
-
-module.exports = {
-	default: Mapping
-};
+module.exports = __webpack_require__(6);
 
 /***/ }),
 /* 6 */
@@ -1133,7 +962,12 @@ module.exports = {
 "use strict";
 
 
-module.exports = __webpack_require__(7);
+module.exports = {
+	encode: __webpack_require__(7),
+	Generator: __webpack_require__(25),
+	Path: __webpack_require__(2),
+	validate: __webpack_require__(27)
+};
 
 /***/ }),
 /* 7 */
@@ -1143,30 +977,12 @@ module.exports = __webpack_require__(7);
 
 
 module.exports = {
-	encode: __webpack_require__(8), // is directory
-	Mapper: __webpack_require__(26).default,
-	Mapping: __webpack_require__(5),
-	Path: __webpack_require__(2).default,
-	path: {
-		Tokenizer: __webpack_require__(3).default
-	},
-	validate: __webpack_require__(27).default
+    bmoorSchema: __webpack_require__(8).default,
+    jsonSchema: __webpack_require__(24).default
 };
 
 /***/ }),
 /* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = {
-    bmoorSchema: __webpack_require__(9).default,
-    jsonSchema: __webpack_require__(25).default
-};
-
-/***/ }),
-/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1289,7 +1105,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1592,7 +1408,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1633,20 +1449,20 @@ module.exports = {
 };
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 module.exports = {
-	soon: __webpack_require__(13),
-	debounce: __webpack_require__(14),
-	window: __webpack_require__(4)
+	soon: __webpack_require__(12),
+	debounce: __webpack_require__(13),
+	window: __webpack_require__(3)
 };
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1687,7 +1503,7 @@ module.exports = function (cb, time, settings) {
 };
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1746,7 +1562,7 @@ module.exports = function (cb, time, settings) {
 };
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2015,16 +1831,16 @@ module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var bmoor = __webpack_require__(0),
-    mixin = __webpack_require__(17),
-    plugin = __webpack_require__(18),
-    decorate = __webpack_require__(19);
+    mixin = __webpack_require__(16),
+    plugin = __webpack_require__(17),
+    decorate = __webpack_require__(18);
 
 function proc(action, proto, def) {
 	var i, c;
@@ -2079,7 +1895,7 @@ maker.plugin = plugin;
 module.exports = maker;
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2094,7 +1910,7 @@ module.exports = function (to, from) {
 };
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2151,7 +1967,7 @@ module.exports = function (to, from, ctx) {
 };
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2197,7 +2013,7 @@ module.exports = function (to, from) {
 };
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2477,7 +2293,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2675,13 +2491,13 @@ module.exports = {
 };
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var window = __webpack_require__(4);
+var window = __webpack_require__(3);
 
 function always(promise, func) {
 	promise.then(func, func);
@@ -2775,7 +2591,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2863,7 +2679,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2955,13 +2771,13 @@ var Eventing = function () {
 module.exports = Eventing;
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Tokenizer = __webpack_require__(3).default;
+var Tokenizer = __webpack_require__(4).default;
 
 var go;
 
@@ -3104,6 +2920,157 @@ module.exports = {
 };
 
 /***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var bmoor = __webpack_require__(1);
+var Path = __webpack_require__(2).default;
+var Writer = __webpack_require__(26).default;
+
+var generators = {
+	constant: function constant(cfg) {
+		var value = cfg.value;
+		return function () {
+			return value;
+		};
+	},
+	string: {
+		random: function random() {
+			return function () {
+				return 'random string';
+			};
+		}
+	},
+	number: {
+		index: function index() {
+			var count = 1;
+			return function () {
+				return count++;
+			};
+		},
+		random: function random(cfg) {
+			if (!cfg) {
+				cfg = {};
+			}
+
+			if (!cfg.min) {
+				cfg.min = 1;
+			}
+
+			if (!cfg.max) {
+				cfg.max = 100;
+			}
+
+			return function () {
+				var val = Math.random() * (cfg.max - cfg.min);
+
+				return val + cfg.min;
+			};
+		}
+	},
+	boolean: {
+		random: function random() {
+			return function () {
+				return Math.random() * 10 % 2 === 0;
+			};
+		}
+	},
+	array: function array(cfg) {
+		return function () {
+			var count = cfg.length || 1;
+
+			if (count < 1) {
+				count = 1;
+			}
+
+			var rtn = [];
+
+			while (count) {
+				rtn.push({});
+				count--;
+			}
+
+			return rtn;
+		};
+	}
+};
+
+var Generator = function () {
+	function Generator(config) {
+		var _this = this;
+
+		_classCallCheck(this, Generator);
+
+		this.fields = {};
+
+		config.forEach(function (cfg) {
+			_this.addField(new Path(cfg.path), cfg.generator, cfg.options);
+		});
+	}
+
+	/*
+ 	path:
+ 	---
+ 	string: generator
+ 	object: options
+ 	||
+ 	any: value
+ 	||
+ 	function: factory
+ */
+
+	_createClass(Generator, [{
+		key: 'addField',
+		value: function addField(path, generator, options) {
+			if (bmoor.isString(generator)) {
+				generator = bmoor.get(generators, generator)(options);
+			}
+
+			var accessors = path.tokenizer.getAccessors();
+			var name = accessors[0].join('.');
+			var field = this.fields[accessors[0]];
+
+			if (field) {
+				field.addPath(path, generator);
+			} else {
+				field = new Writer(accessors.shift());
+
+				field.addChild(accessors, generator);
+
+				this.fields[name] = field;
+			}
+		}
+	}, {
+		key: 'generate',
+		value: function generate() {
+			var rtn = {};
+
+			for (var f in this.fields) {
+				var field = this.fields[f];
+
+				field.generateOn(rtn);
+			}
+
+			return rtn;
+		}
+	}]);
+
+	return Generator;
+}();
+
+module.exports = {
+	default: Generator,
+	generators: generators
+};
+
+/***/ }),
 /* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -3114,83 +3081,96 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var Path = __webpack_require__(2).default,
-    bmoor = __webpack_require__(1),
-    Mapping = __webpack_require__(5);
+var makeSetter = __webpack_require__(1).makeSetter;
 
-function stack(fn, old) {
-	if (old) {
-		return function (to, from) {
-			old(to, from);
-			fn(to, from);
-		};
-	} else {
-		return fn;
+var Writer = function () {
+	function Writer(accessor) {
+		_classCallCheck(this, Writer);
+
+		this.accessor = accessor;
+
+		this.set = makeSetter(accessor);
 	}
-}
 
-// TODO : merging arrays
-
-// converts one object structure to another
-
-var Mapper = function () {
-	function Mapper(settings) {
-		var _this = this;
-
-		_classCallCheck(this, Mapper);
-
-		this.mappings = {};
-
-		// this.run is defined via recursive stacks
-		if (settings) {
-			Object.keys(settings).forEach(function (to) {
-				var from = settings[to];
-
-				if (bmoor.isObject(from)) {
-					// so it's an object, parent is an array
-					if (from.to) {
-						to = from.to;
-					}
-
-					if (from.from) {
-						from = from.from;
-					} else {
-						throw new Error('I can not find a from clause');
-					}
-				}
-
-				_this.addMapping(to, from);
-			});
+	_createClass(Writer, [{
+		key: '_makeChild',
+		value: function _makeChild(accessor) {
+			return new this.constructor(accessor);
 		}
-	}
+	}, {
+		key: 'addChild',
+		value: function addChild(accessors, generator) {
+			if (accessors.length) {
+				var next = accessors.shift();
 
-	_createClass(Mapper, [{
-		key: 'addMapping',
-		value: function addMapping(toPath, fromPath) {
-			var to = new Path(toPath),
-			    from = new Path(fromPath),
-			    fromNext = from.remainder();
+				if (!this.children) {
+					this.children = {};
 
-			if (fromNext) {
-				var dex = from.root() + '=>' + to.root(),
-				    mapping = this.mappings[dex];
-
-				if (mapping) {
-					mapping.addChild(to, from);
-				} else {
-					mapping = new Mapping(to, from);
-					this.mappings[dex] = mapping;
-
-					this.process = stack(mapping.process, this.process);
+					if (!this.generator) {
+						this.setGenerator(function () {
+							return [{}];
+						});
+					}
 				}
+
+				var value = next.join('.');
+				var child = this.children[value];
+
+				if (!child) {
+					child = this.children[value] = this._makeChild(next);
+				}
+
+				child.addChild(accessors, generator);
+			} else {
+				this.setGenerator(generator);
+			}
+		}
+	}, {
+		key: 'addPath',
+		value: function addPath(path, generator) {
+			var accessors = path.tokenizer.getAccessors();
+
+			// TODO : better way to do this right?
+			if (accessors[0].join('.') !== this.accessor.join('.')) {
+				throw new Error('can not add path that does not ' + 'have matching first accessor');
+			}
+
+			accessors.shift();
+
+			this.addChild(accessors, generator);
+		}
+	}, {
+		key: 'setGenerator',
+		value: function setGenerator(fn) {
+			this.generator = fn;
+		}
+	}, {
+		key: 'generateOn',
+		value: function generateOn(obj) {
+			var _this = this;
+
+			var val = this.generator();
+
+			this.set(obj, val);
+
+			if (this.children) {
+				val.forEach(function (datum) {
+					for (var p in _this.children) {
+						var child = _this.children[p];
+
+						child.generateOn(datum);
+					}
+				});
 			}
 		}
 	}]);
 
-	return Mapper;
+	return Writer;
 }();
 
-module.exports = Mapper;
+module.exports = {
+	default: Writer
+};
 
 /***/ }),
 /* 27 */
