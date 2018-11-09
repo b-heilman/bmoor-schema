@@ -1,6 +1,6 @@
 {
   "name": "bmoor-schema",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "author": "Brian Heilman <das.ist.junk@gmail.com>",
   "description": "A simple schema pattern for UI interaction",
   "license": "MIT",
