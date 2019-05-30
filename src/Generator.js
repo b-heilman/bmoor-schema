@@ -3,6 +3,24 @@ const bmoor = require('bmoor');
 const Path = require('./Path.js').default;
 const Writer = require('./path/Writer.js').default;
 
+const characterSet = '#$?<>()"\'\\ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const stringConstants = [
+	'hello', 'world', 'foo', 'bar',
+	'eins', 'zwei', 'drei', 'fier',
+	function(size){
+		const length = size || Math.floor(Math.random() * 10);
+
+		let rtn = ''
+		for (let i = 0; i < length; i++ ) {
+      		rtn += characterSet.charAt(
+      			Math.floor(Math.random() * characterSet.length)
+      		);
+   		}
+
+   		return rtn;
+	}
+];
+
 const generators = {
 	constant: function(cfg){
 		let value = cfg.value;
@@ -11,9 +29,22 @@ const generators = {
 		};
 	},
 	string: {
-		random: function(){
+		random: function(cfg = {}){
 			return function(){
-				return 'random string';
+				const length = cfg.length || Math.floor(Math.random() * 10);
+				const rtn = [];
+
+				for (let i = 0; i < length; i++){
+					let val = stringConstants[Math.floor(Math.random() * stringConstants.length)];
+				
+					if (bmoor.isFunction(val)){
+						rtn.push(val(cfg.size));
+					} else {
+						rtn.push(val);
+					}
+				}
+
+				return rtn.join(' ');
 			};
 		}
 	},
