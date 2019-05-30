@@ -103,7 +103,7 @@ class Generator {
 
 		let accessors = path.tokenizer.getAccessors();
 		let name = accessors[0].join('.');
-		let field = this.fields[accessors[0]];
+		let field = this.fields[name];
 
 		if (field) {
 			field.addPath(path, generator);
