@@ -1,8 +1,5 @@
 const bmoor = require('bmoor'),
 	makeGetter = bmoor.makeGetter,
-	// makeSetter = bmoor.makeSetter,
-	// Writer = require('./path/Writer.js').default,
-	// Reader = require('./path/Reader.js').default,
 	Tokenizer = require('./path/Tokenizer.js').default;
 
 class Path {
