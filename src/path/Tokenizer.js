@@ -1,68 +1,85 @@
 
 const bmoor = require('bmoor');
+const {AccessList} = require('./AccessList.js');
 
-function nextToken( path ){
-	var i = 0,
-		c = path.length,
-		char = path.charAt(0),
-		more = true;
+function nextToken(path){
+	let char = path.charAt(0);
 
-	let access = null;
+	if (char === '#'){
+		path = path.substring(1);
 
-	if ( path.charAt(1) === ']' ){
-		// don't do anything
-	}else if ( char === '[' ){
-		let count = 0;
+		let next = path.search(/[\.\[#]/);
+		let action = path.substring(0, next);
 
-		do {
-			if ( char === '[' ){
-				count++;
-			}else if ( char === ']' ){
-				count--;
-			}
+		next = path.substring(next+(path.charAt(next) === '.' ? 1 : 0));
 
-			i++;
-			char = path.charAt(i);
-		} while( count && i < c );
+		return {
+			type: 'action',
+			next: next,
+			value: action,
+			accessor: null
+		};
+	} else {
+		let i = 0;
+		let c = path.length;
+		let accessor = null;
 
-		access = path.substring(2,i-2);
-	}else{
-		do {
-			if ( char === '.' || char === '[' ){
-				more = false;
-			} else {
+		if (path.charAt(1) === ']'){
+			// don't do anything
+		}else if ( char === '[' ){
+			let count = 0;
+
+			do {
+				if ( char === '[' ){
+					count++;
+				}else if ( char === ']' ){
+					count--;
+				}
+
 				i++;
 				char = path.charAt(i);
-			}
-		} while( more && i < c );
+			} while( count && i < c );
 
-		access = path.substring(0,i);
+			accessor = path.substring(2,i-2);
+		}else{
+			let more = true;
+
+			do {
+				if ( char === '.' || char === '[' ){
+					more = false;
+				} else {
+					i++;
+					char = path.charAt(i);
+				}
+			} while( more && i < c );
+
+			accessor = path.substring(0,i);
+		}
+		
+
+		let token = path.substring(0,i),
+			isArray = false;
+
+		if (char === '[' && path.charAt(i+1) === ']'){
+			token += '[]';
+			i += 2;
+
+			isArray = true;
+		}
+
+		if ( path.charAt(i) === '.' ){
+			i++;
+		}
+
+		let next = path.substring(i);
+
+		return {
+			type: isArray ? 'array' : 'linear',
+			next,
+			value: token,
+			accessor
+		};
 	}
-	
-
-	let token = path.substring(0,i),
-		isArray = false;
-
-	if ( char === '[' && path.charAt(i+1) === ']' ){
-		token += '[]';
-		i += 2;
-
-		isArray = true;
-	}
-
-	if ( path.charAt(i) === '.' ){
-		i++;
-	}
-
-	let next = path.substring(i);
-
-	return {
-		value: token,
-		next: next,
-		done: false,
-		isArray: isArray,
-		accessor: access
-	};
 }
 
 class Tokenizer{
@@ -71,7 +88,8 @@ class Tokenizer{
 
 		this.begin();
 
-		if ( bmoor.isString(path) ){
+		if (bmoor.isString(path)){
+			path = path.trim();
 			tokens = [];
 
 			while( path ){
@@ -105,7 +123,10 @@ class Tokenizer{
 		if (token){
 			this.pos++;
 
-			return token;
+			let rtn = Object.create(token);
+			rtn.done = false;
+
+			return rtn;
 		}else{
 			return {
 				done: true
@@ -113,41 +134,61 @@ class Tokenizer{
 		}
 	}
 
-	getAccessors(){
+	getAccessList(){
 		var rtn = this.accessors;
 
-		if ( rtn === undefined ){
-			let cur = null;
+		if (rtn === undefined){
+			let path = null;
 
 			rtn = [];
 
 			for (let i = 0, c = this.tokens.length; i < c; i++){
 				let token = this.tokens[i];
 
-				if (cur){
-					cur.push(token.accessor);
-				}else if (token.accessor){
-					cur = [token.accessor];
-				}else{
-					cur = [];
-				}
+				if (token.type === 'action'){
+					rtn.push({
+						path,
+						action: token.value,
+						isArray: false
+					});
 
-				if (token.isArray){
-					rtn.push(cur);
-					cur = null;
+					path = null;
+				} else {
+					if (path){
+						path.push(token.accessor);
+					}else if (token.accessor){
+						path = [token.accessor];
+					}else{
+						path = [];
+					}
+
+					if (token.type === 'array'){
+						rtn.push({
+							path,
+							action: false,
+							isArray: true
+						});
+
+						path = null;
+					}
 				}
 			}
 
-			if (cur){
-				rtn.push(cur);
+			if (path){
+				rtn.push({
+					path,
+					action: false,
+					isArray: false
+				});
 			}
 
 			this.accessors = rtn;
 		}
 
-		return rtn.slice(0);
+		return new AccessList(this.accessors);
 	}
 
+	// TODO : I don't think chunk is used anymore
 	chunk(){
 		var rtn = this.chunks;
 
@@ -169,7 +210,7 @@ class Tokenizer{
 					cur = token.value;
 				}
 
-				if (token.isArray){
+				if (token.type !== 'linear' ){
 					rtn.push(cur);
 					cur = null;
 				}
@@ -191,7 +232,7 @@ class Tokenizer{
 				tokens = this.tokens;
 
 			for( let i = 0, c = tokens.length; i < c; i++ ){
-				if ( tokens[i].isArray ){
+				if ( tokens[i].type === 'array' ){
 					found = i;
 					i = c;
 				}
@@ -203,10 +244,9 @@ class Tokenizer{
 		return this.arrayPos;
 	}
 
-	root(accessors){
-		return (accessors ? 
-			this.getAccessors() : this.chunk()
-		)[0];
+	root(returnAccessor){
+		return returnAccessor ? 
+			this.getAccessList().getFront().access.path : this.chunk()[0];
 	}
 
 	remainder(){
@@ -223,5 +263,6 @@ class Tokenizer{
 }
 
 module.exports = {
-	default: Tokenizer
+	default: Tokenizer,
+	Tokenizer
 };

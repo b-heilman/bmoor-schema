@@ -1,13 +1,250 @@
 describe('bmoor-schema::Tokenizer', function(){
 	var Tokenizer = require('./Tokenizer.js').default;
 
-	it('::getAccessors', function(){
-		var tokens = new Tokenizer(
-				'foo.bar["hello.world"].eins[][].zwei'
+	describe('token generation', function(){
+		it ('should correctly parse with no arrays', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar.com'
 			);
 
-		expect(tokens.length).toBe();
-		expect(tokens.getAccessors()).toEqual([
+			expect(tokenized.tokens).toEqual([{
+				type: 'linear',
+				value: 'foo',
+				next: 'bar.com',
+				accessor: 'foo'
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: 'com',
+				accessor: 'bar'
+			}, {
+				type: 'linear',
+				value: 'com',
+				next: '',
+				accessor: 'com'
+			}]);
+		});
+		
+		it ('should correctly parse with bracket access', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"]'
+			);
+			
+			expect(tokenized.tokens).toEqual([{
+				type: 'linear',
+				value: 'foo',
+				next: 'bar["hello.world"]',
+				accessor: 'foo'
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: '["hello.world"]',
+				accessor: 'bar'
+			}, {
+				type: 'linear',
+				value: '["hello.world"]',
+				next: '',
+				accessor: 'hello.world'
+			}]);
+		});
+
+		it ('should correctly parse with array', function(){
+			var tokenized = new Tokenizer(
+				'foo[].bar'
+			);
+
+			expect(tokenized.tokens).toEqual([{
+				type: 'array',
+				value: 'foo[]',
+				next: 'bar',
+				accessor: 'foo'
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: '',
+				accessor: 'bar'
+			}]);
+		});
+
+		it ('should correctly parse with action', function(){
+			var tokenized = new Tokenizer(
+				'#hello-world.foo.bar'
+			);
+
+			expect(tokenized.tokens).toEqual([{
+				type: 'action',
+				value: 'hello-world',
+				next: 'foo.bar',
+				accessor: null
+			}, {
+				type: 'linear',
+				value: 'foo',
+				next: 'bar',
+				accessor: 'foo'
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: '',
+				accessor: 'bar'
+			}]);
+		});
+
+		it ('should correctly parse with multiple actions', function(){
+			var tokenized = new Tokenizer(
+				'#hello-world.foo.#ok["bar"]'
+			);
+
+			expect(tokenized.tokens).toEqual([{
+				type: 'action',
+				value: 'hello-world',
+				next: 'foo.#ok["bar"]',
+				accessor: null
+			}, {
+				type: 'linear',
+				value: 'foo',
+				next: '#ok["bar"]',
+				accessor: 'foo'
+			}, {
+				type: 'action',
+				value: 'ok',
+				next: '["bar"]',
+				accessor: null
+			}, {
+				type: 'linear',
+				value: '["bar"]',
+				next: '',
+				accessor: 'bar'
+			}]);
+		});
+
+		it ('should correctly parse with back-to-back actions', function(){
+			var tokenized = new Tokenizer(
+				'foo.#hello.#world.bar'
+			);
+
+			expect(tokenized.tokens).toEqual([{
+				type: 'linear',
+				value: 'foo',
+				next: '#hello.#world.bar',
+				accessor: 'foo'
+			}, {
+				type: 'action',
+				value: 'hello',
+				next: '#world.bar',
+				accessor: null
+			}, {
+				type: 'action',
+				value: 'world',
+				next: 'bar',
+				accessor: null
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: '',
+				accessor: 'bar'
+			}]);
+		});
+
+		it('should correctly parse with action and array', function(){
+			var tokenized = new Tokenizer(
+				'#hello-world[]foo.bar'
+			);
+
+			expect(tokenized.tokens).toEqual([{
+				type: 'action',
+				value: 'hello-world',
+				next: '[]foo.bar',
+				accessor: null
+			}, {
+				type: 'array',
+				value: '[]',
+				next: 'foo.bar',
+				accessor: null
+			}, {
+				type: 'linear',
+				value: 'foo',
+				next: 'bar',
+				accessor: 'foo'
+			}, {
+				type: 'linear',
+				value: 'bar',
+				next: '',
+				accessor: 'bar'
+			}]);
+		});
+
+		describe('#getAccessList', function(){
+			it('should correctly generate with action and array, action first', function(){
+				var tokenized = new Tokenizer(
+					'#hello-world[]foo.bar'
+				);
+
+				expect(tokenized.getAccessList().raw())
+				.toEqual([{
+					path: null,
+					action: 'hello-world',
+					isArray: false
+				}, {
+					path: [],
+					action: false,
+					isArray: true
+				}, {
+					path: ['foo','bar'],
+					action: false,
+					isArray: false
+				}]);
+			});
+
+			it('should correctly generate with action and array, array first', function(){
+				var tokenized = new Tokenizer(
+					'foo[]#hello-world.bar'
+				);
+
+				expect(tokenized.getAccessList().raw())
+				.toEqual([{
+					path: ['foo'],
+					action: false,
+					isArray: true
+				}, {
+					path: null,
+					action: 'hello-world',
+					isArray: false
+				}, {
+					path: ['bar'],
+					action: false,
+					isArray: false
+				}]);
+			});
+
+			it('should correctly generate with action and array, array first', function(){
+				var tokenized = new Tokenizer(
+					'#foo.#bar.ok'
+				);
+
+				expect(tokenized.getAccessList().raw())
+				.toEqual([{
+					path: null,
+					action: 'foo',
+					isArray: false
+				}, {
+					path: null,
+					action: 'bar',
+					isArray: false
+				}, {
+					path: ['ok'],
+					action: false,
+					isArray: false
+				}]);
+			});
+		});
+	});
+
+	it('::getAccessors', function(){
+		var tokenized = new Tokenizer(
+			'foo.bar["hello.world"].eins[][].zwei'
+		);
+
+		expect(tokenized.getAccessList().simplify()).toEqual([
 			['foo','bar','hello.world','eins'],
 			[],
 			['zwei']
@@ -15,12 +252,11 @@ describe('bmoor-schema::Tokenizer', function(){
 	});
 
 	it('::chunk', function(){
-		var tokens = new Tokenizer(
-				'foo.bar["hello.world"].eins[][].zwei'
-			);
+		var tokenized = new Tokenizer(
+			'foo.bar["hello.world"].eins[][].zwei'
+		);
 
-		expect(tokens.length).toBe();
-		expect(tokens.chunk()).toEqual([
+		expect(tokenized.chunk()).toEqual([
 			'foo.bar["hello.world"].eins[]',
 			'[]',
 			'zwei'
@@ -29,31 +265,31 @@ describe('bmoor-schema::Tokenizer', function(){
 
 	describe('::root', function(){
 		it('should return back accessors', function(){
-			var tokens = new Tokenizer(
-					'foo.bar["hello.world"].eins[][].zwei'
-				);
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
 
-			expect( tokens.root(true) )
+			expect(tokenized.root(true))
 			.toEqual(['foo','bar','hello.world','eins']);
 		});
 
 		it('should return back simple text', function(){
-			var tokens = new Tokenizer(
-					'foo.bar["hello.world"].eins[][].zwei'
-				);
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
 
-			expect( tokens.root() )
+			expect(tokenized.root())
 			.toEqual('foo.bar["hello.world"].eins[]');
 		});
 	});
 
 	describe('::remainder', function(){
-		it('should return back remaining tokens', function(){
+		it('should return back remaining tokenized', function(){
 			var tokenized = new Tokenizer(
-					'foo.bar["hello.world"].eins[][].zwei'
-				);
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
 
-			expect( tokenized.remainder().tokens )
+			expect(tokenized.remainder().tokens)
 			.toEqual( tokenized.tokens.slice(4) );
 		});
 	});

@@ -4,22 +4,20 @@ const Path = require('./Path.js').default;
 const Writer = require('./path/Writer.js').default;
 
 const characterSet = '#$?<>()"\'\\ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-const stringConstants = [
-	'hello', 'world', 'foo', 'bar',
-	'eins', 'zwei', 'drei', 'fier',
-	function(size){
-		const length = size || Math.floor(Math.random() * 10);
 
-		let rtn = ''
-		for (let i = 0; i < length; i++ ) {
-      		rtn += characterSet.charAt(
-      			Math.floor(Math.random() * characterSet.length)
-      		);
-   		}
+function generateString(cfg){
+	const length = cfg.string || 
+		(Math.floor(Math.random() * (cfg.stringLength || 10)) + (cfg.stringMin || 4));
 
-   		return rtn;
+	let rtn = '';
+	for (let i = 0; i < length; i++ ) {
+  		rtn += characterSet.charAt(
+  			Math.floor(Math.random() * characterSet.length)
+  		);
 	}
-];
+
+	return rtn;
+}
 
 const generators = {
 	constant: function(cfg){
@@ -31,17 +29,12 @@ const generators = {
 	string: {
 		random: function(cfg = {}){
 			return function(){
-				const length = cfg.length || Math.floor(Math.random() * 10);
 				const rtn = [];
+				const length = cfg.sentence || 
+					(Math.floor(Math.random() * (cfg.sentenceLength || 10)) + (cfg.sentenceMin || 1));
 
 				for (let i = 0; i < length; i++){
-					let val = stringConstants[Math.floor(Math.random() * stringConstants.length)];
-				
-					if (bmoor.isFunction(val)){
-						rtn.push(val(cfg.size));
-					} else {
-						rtn.push(val);
-					}
+					rtn.push(generateString(cfg));
 				}
 
 				return rtn.join(' ');
@@ -126,25 +119,34 @@ class Generator {
 		||
 		function: factory
 	*/
-	
 	addField(path, generator, options){
 		if (bmoor.isString(generator)){
 			generator = bmoor.get(generators, generator)(options);
 		}
 
-		let accessors = path.tokenizer.getAccessors();
-		let name = accessors[0].join('.');
-		let field = this.fields[name];
+		const accessors = path.tokenizer.getAccessList();
+		
+		let writer = new Writer(accessors.getFront());
+		path = writer.accessor.ref;
 
-		if (field) {
-			field.addPath(path, generator);
+		let found = this.fields[path];
+
+		if (found) {
+			writer = found;
 		} else {
-			field = new Writer(accessors.shift());
-
-			field.addChild(accessors, generator);
-
-			this.fields[name] = field; 
+			this.fields[path] = writer; 
 		}
+
+		const following = accessors.getFollowing();
+
+		if (following){
+			writer.addChild(following, generator);
+		} else {
+			writer.setGenerator(generator);
+		}
+		
+
+		return writer;
 	}
 
 	generate(){
@@ -153,7 +155,7 @@ class Generator {
 		for(let f in this.fields){
 			let field = this.fields[f];
 
-			field.generateOn(rtn);
+			field.go(rtn);
 		}
 
 		return rtn;
@@ -161,6 +163,7 @@ class Generator {
 }
 
 module.exports = {
+	Generator,
 	default: Generator,
 	generators: generators
 };

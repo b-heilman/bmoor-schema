@@ -1,54 +1,54 @@
 
-describe('bmoor-schema.Mapper', function(){
-	/*
-	var Mapper = bmoorSchema.Mapper;
+const {Transformer, template} = require('./Transformer.js');
+
+describe('bmoor-schema.Transformer', function(){
+	
 	it('should be defined', function(){
-		expect( Mapper ).toBeDefined();
+		expect( Transformer ).toBeDefined();
 	});
-	it('should instantiate correctly with a hash', function(){
-		var mapper = new Mapper({
-				foo: 'bar',
-				eins: 'zwei'
-			}),
-			to = {},
-			from = {
-				bar: 1,
-				zwei: 2
-			};
-		mapper.go( to, from );
-		expect( to.foo ).toBe( 1 );
-		expect( to.eins ).toBe( 2 );
-	});
+
 	it('should instantiate correctly with an array', function(){
-		var mapper = new Mapper([
-				{ to: 'foo', from: 'bar' },
-				{ to: 'eins', from: 'zwei' }
-			]),
-			to = {},
-			from = {
-				bar: 1,
-				zwei: 2
-			};
-		mapper.go( to, from );
+		const transformer = new Transformer([
+			{ 
+				from: 'bar',
+				to: 'foo'
+			}, { 
+				to: 'eins',
+				from: 'zwei'
+			}
+		]);
+		const to = {};
+		const from = {
+			bar: 1,
+			zwei: 2
+		};
+
+		transformer.go(from, to);
+
 		expect( to.foo ).toBe( 1 );
 		expect( to.eins ).toBe( 2 );
 	});
+
 	it('should run correctly with delayed routes', function(){
-		var mapper = new Mapper(),
+		var transformer = new Transformer(),
 			to = {},
 			from = {
 				bar: 1,
 				zwei: 2
 			};
-		mapper.addMapping( 'foo', 'bar' );
-		mapper.addMapping( 'eins', 'zwei' );
-		mapper.go( to, from );
+		
+		transformer.addMapping('bar', 'foo');
+		transformer.addMapping('zwei', 'eins');
+
+		transformer.go(from, to);
+
 		expect( to.foo ).toBe( 1 );
 		expect( to.eins ).toBe( 2 );
 	});
+
 	describe('multi tiered routes', function(){
 		it('should work on the from', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					foo: {
@@ -56,27 +56,33 @@ describe('bmoor-schema.Mapper', function(){
 						hello: 2
 					}
 				};
-			mapper.addMapping( 'eins', 'foo.bar' );
-			mapper.addMapping( 'zwei', 'foo.hello' );
-			mapper.go( to, from );
-			expect( to.eins ).toBe( 1 );
-			expect( to.zwei ).toBe( 2 );
+
+			transformer.addMapping('foo.bar',  'eins');
+			transformer.addMapping('foo.hello', 'zwei');
+			transformer.go(from, to);
+			
+			expect(to.eins).toBe( 1 );
+			expect(to.zwei).toBe( 2 );
 		});
+
 		it('should work on the to', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					foo: 1,
 					bar: 2
 				};
-			mapper.addMapping( 'foo.eins', 'foo' );
-			mapper.addMapping( 'foo.zwei', 'bar' );
-			mapper.go( to, from );
-			expect( to.foo.eins ).toBe( 1 );
-			expect( to.foo.zwei ).toBe( 2 );
+
+			transformer.addMapping('foo', 'foo.eins');
+			transformer.addMapping('bar', 'foo.zwei');
+			transformer.go(from, to);
+			
+			expect(to.foo.eins).toBe( 1 );
+			expect(to.foo.zwei).toBe( 2 );
 		});
+
 		it('should copy over objects, not just scalars', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					foo: {
@@ -84,15 +90,68 @@ describe('bmoor-schema.Mapper', function(){
 						zwei: 2
 					}
 				};
-			mapper.addMapping( 'bar', 'foo' );
-			mapper.go( to, from );
+
+			transformer.addMapping('foo', 'bar');
+			transformer.go(from, to);
+			
 			expect( to.bar.eins ).toBe( 1 );
 			expect( to.bar.zwei ).toBe( 2 );
 		});
 	});
+
+	describe('::template', function(){
+		it('should work', function(){
+		const t = template({
+			person: {
+				fname: 'Brian',
+				lname: 'Halloman'
+			},
+			tools: [{
+				name: 'ok',
+				sublist: [{
+					foo: 'bar'
+				}]
+			}],
+			properties: [{
+				path: 'foo.bar',
+				something: 'orOther'
+			}]
+		});
+
+		expect({
+			'properties': [
+					'person.fname',
+					'person.lname'
+				],
+				'children': {
+				'tools[]': {
+					'properties': [
+						'tools[].name'
+					],
+					'children': {
+						'sublist[]': {
+							'properties': [
+								'tools[].sublist[].foo'
+							],
+							'children': {}
+						}
+					}
+				},
+				'properties[]': {
+					'properties': [
+						'properties[].path',
+						'properties[].something'
+					],
+					'children': {}
+				}
+				}
+		}).toEqual(t);
+		});
+	});
+	/*
 	describe('arrays in routes', function(){
 		it('should copy shallow arrays', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -100,8 +159,10 @@ describe('bmoor-schema.Mapper', function(){
 						'world'
 					]
 				};
-			mapper.addMapping( 'foo[]', 'test[]' );
-			mapper.go( to, from );
+
+			transformer.addMapping( 'foo[]', 'test[]' );
+			transformer.go( to, from );
+			
 			expect( to.foo ).toEqual([
 				'hello',
 				'world'
@@ -109,7 +170,7 @@ describe('bmoor-schema.Mapper', function(){
 		});
 	
 		it('should copy and change structure', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -117,15 +178,18 @@ describe('bmoor-schema.Mapper', function(){
 						'world'
 					]
 				};
-			mapper.addMapping( 'foo[]value', 'test[]' );
-			mapper.go( to, from );
+			
+			transformer.addMapping( 'foo[]value', 'test[]' );
+			transformer.go( to, from );
+			
 			expect( to.foo ).toEqual([
 				{value:'hello'},
 				{value:'world'}
 			]);
 		});
+		
 		it('should simplify structure', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -133,15 +197,18 @@ describe('bmoor-schema.Mapper', function(){
 						{ value: 'world' }
 					]
 				};
-			mapper.addMapping( 'foo[]', 'test[]value' );
-			mapper.go( to, from );
+			
+			transformer.addMapping( 'foo[]', 'test[]value' );
+			transformer.go( to, from );
+			
 			expect( to.foo ).toEqual([
 				'hello',
 				'world'
 			]);
 		});
+		
 		it('should work with multiple properties', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -149,9 +216,11 @@ describe('bmoor-schema.Mapper', function(){
 						{ foo: 'world', doop: 'zwei' }
 					]
 				};
-			mapper.addMapping( 'foo[]bar', 'test[]foo' );
-			mapper.addMapping( 'foo[]hello.world', 'test[]doop' );
-			mapper.go( to, from );
+			
+			transformer.addMapping( 'foo[]bar', 'test[]foo' );
+			transformer.addMapping( 'foo[]hello.world', 'test[]doop' );
+			transformer.go( to, from );
+			
 			expect( to.foo ).toEqual([
 				{ 
 					bar: 'hello',
@@ -167,8 +236,9 @@ describe('bmoor-schema.Mapper', function(){
 				}
 			]);
 		});
+		
 		it('should work with multiple arrays', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -186,8 +256,10 @@ describe('bmoor-schema.Mapper', function(){
 						},
 					]
 				};
-			mapper.addMapping( 'foo[]bar[]', 'test[]foo[]bar' );
-			mapper.go( to, from );
+			
+			transformer.addMapping( 'foo[]bar[]', 'test[]foo[]bar' );
+			transformer.go( to, from );
+			
 			expect( to.foo ).toEqual([
 				{ 
 					bar: [
@@ -203,8 +275,9 @@ describe('bmoor-schema.Mapper', function(){
 				},
 			]);
 		});
+
 		it('should work with stacked arrays', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -222,15 +295,16 @@ describe('bmoor-schema.Mapper', function(){
 						},
 					]
 				};
-			mapper.addMapping( 'foo[][]', 'test[]foo[]bar' );
-			mapper.go( to, from );
+			transformer.addMapping( 'foo[][]', 'test[]foo[]bar' );
+			transformer.go( to, from );
 			expect( to.foo ).toEqual([
 				[ 1, 2 ],
 				[ 3, 4 ]
 			]);
 		});
+		
 		it('should be able to merge arrays', function(){
-			var mapper = new Mapper(),
+			var transformer = new Transformer(),
 				to = {},
 				from = {
 					test: [
@@ -248,13 +322,14 @@ describe('bmoor-schema.Mapper', function(){
 						},
 					]
 				};
-			mapper.addMapping( 'foo[][merge]', 'test[]foo[]bar' );
-			mapper.go( to, from );
+			transformer.addMapping( 'foo[][merge]', 'test[]foo[]bar' );
+			transformer.go( to, from );
 			expect( to.foo ).toEqual([ 1, 2, 3, 4 ]);
 		});
+
 		describe('leading array', function(){
 			it('should work with stacked arrays', function(){
-				var mapper = new Mapper(),
+				var transformer = new Transformer(),
 					to = [],
 					from = [
 						{ 
@@ -270,15 +345,16 @@ describe('bmoor-schema.Mapper', function(){
 							]
 						},
 					];
-				mapper.addMapping( '[][]', '[]foo[]bar' );
-				mapper.go( to, from );
+				transformer.addMapping( '[][]', '[]foo[]bar' );
+				transformer.go( to, from );
 				expect( to ).toEqual([
 					[ 1, 2 ],
 					[ 3, 4 ]
 				]);
 			});
+			
 			it('should be able to merge arrays', function(){
-				var mapper = new Mapper(),
+				var transformer = new Transformer(),
 					to = [],
 					from = {
 						test: [
@@ -296,11 +372,11 @@ describe('bmoor-schema.Mapper', function(){
 							},
 						]
 					};
-				mapper.addMapping( '[][merge]', 'test[]foo[]bar' );
-				mapper.go( to, from );
+				transformer.addMapping( '[][merge]', 'test[]foo[]bar' );
+				transformer.go( to, from );
 				expect( to ).toEqual([ 1, 2, 3, 4 ]);
 			});
-		});
+		});	
 	});
 	*/
 });
