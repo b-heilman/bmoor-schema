@@ -1,59 +1,59 @@
 
-const Path = require('Path').default;
+const {encode} = require('./encode/bmoorSchema.js');
+const {Mapper} = require('./path/Mapper.js');
+const {Tokenizer} = require('./path/Tokenizer.js');
 
-class Structure {
-	constructor(){
-		this.children = {};
-		this.properties = [];
+class Transformer {
+	constructor(transformations = []){
+		this.mapper = new Mapper(transformations);
 	}
 
-	_makeChild(){
-		return new (this.constructor)();
+	addMapping(from, to){
+		this.mapper.addPairing(from, to);
 	}
 
-	addPath(path){
-		if (!(path instanceof Path)){
-			path = new Path(path);
-		}
-
-		let root = path.root(true);
-		let remainder = path.remainder();
-
-		if (remainder){
-			let child = this.children[root];
-
-			if (!child){
-				child = this.children[root] = this._makeChild();
-			}
-
-			child.addPath(remainder);
-		} else {
-			this.properties.push(path);
-		}
-	}
-
-	addChild(path, struct){
-		var root = path.root(true),
-			remainder = path.remainder(),
-			child = this.children[root];
-
-		if (remainder){
-			if (!child){
-				child = this.children[root] = this._makeChild();
-			}
-
-			child.addChild(remainder,struct);
-		}else{
-			if (child){
-				struct.children = child.children;
-				struct.properties = child.properties;
-			}
-
-			this.children[root] = struct;
-		}
+	go(from, to){
+		return this.mapper.go(from, to);
 	}
 }
 
 module.exports = {
-	default: Structure
+	template: function(obj){
+		const root = {
+			properties: [],
+			children: {}
+		};
+		const encoded = encode(obj);
+
+		encoded.forEach(p => {
+			let tokenized = new Tokenizer(p.path);
+			let chunks = tokenized.chunk();
+
+			let r = root;
+			while(chunks.length){
+				let chunk = chunks.shift();
+
+				if (chunks.length){
+					let child = r.children[chunk];
+
+					if (!child){
+						child = {
+							properties: [],
+							children: {}
+						};
+
+						r.children[chunk] = child;
+					}
+
+					r = child;
+				} else {
+					r.properties.push(p.path);
+				}
+			}
+		});
+
+		return root;
+	},
+	Transformer,
+	default: Transformer
 };

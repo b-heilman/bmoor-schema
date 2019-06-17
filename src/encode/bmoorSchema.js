@@ -1,20 +1,20 @@
 var bmoor = require('bmoor'),
 	ops;
 
-function parse( def, path, val ){
+function parse(def, path, val){
 	var method;
 
 	if (val === null || val === undefined) {
 		return;
 	}
    
-	if ( bmoor.isArray(val) ){
+	if (bmoor.isArray(val)){
 		method = 'array';
 	}else{
 		method = typeof(val);
 	}
 
-	ops[method]( def, path.slice(0), val );
+	ops[method](def, path.slice(0), val);
 }
 
 function formatProperty( prop, escaped ){
@@ -48,12 +48,13 @@ function join( path, escaped ){
 
 ops = {
 	array: function( def, path, val ){
+		// TODO : I'd like to encode all items in the array and merge
 		// always encode first value of array
 		var next = val[0];
 
 		path.push('[]');
 
-		parse( def, path, next );
+		parse(def, path, next);
 	},
 	object: function( def, path, val ){
 		var pos = path.length;
@@ -87,17 +88,15 @@ ops = {
 	}
 };
 
-function encode( json, escaped ){
+function encode(json, escaped = /[\W]/){
 	var t = [];
 
-	if ( !escaped ){
-		escaped = /[\W]/;
-	}
+	if (json){
+		parse(t, [], json);
 
-	if ( json ){
-		parse( t, [], json );
-
-		t.forEach( d => d.path = join(d.path,escaped) );
+		t.forEach(d => {
+			d.path = join(d.path, escaped);
+		});
 
 		return t;
 	}else{
@@ -106,6 +105,7 @@ function encode( json, escaped ){
 }
 
 module.exports = {
+	encode,
 	default: encode,
 	types: ops
 };

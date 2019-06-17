@@ -24,7 +24,7 @@ class Path {
 	// when given [].a
 	flatten( obj ){
 		var target = [obj],
-			chunks = this.tokenizer.getAccessors();
+			chunks = this.tokenizer.getAccessList().simplify();
 
 		while( chunks.length ){
 			let chunk = chunks.shift(),
@@ -52,5 +52,6 @@ class Path {
 }
 
 module.exports = {
+	Path,
 	default: Path
 };

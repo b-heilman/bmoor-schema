@@ -30,6 +30,7 @@ module.exports = function(config) {
             'config/test.js',
             'dist/bmoor-schema.js',
             //------------
+            // 'src/path/Tokenizer.spec.js'
             'src/**/*.spec.js'
         ],
 

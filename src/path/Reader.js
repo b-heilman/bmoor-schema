@@ -1,22 +1,20 @@
 
-const makeGetter = require('bmoor').makeGetter;
+const Path = require('../Path.js').default;
+const Actionable = require('./Actionable.js').default;
 
-class Reader{
-	constructor(tokenizer){
-		this.token = tokenizer.next();
+class Reader extends Actionable {
+}
 
-		if (tokenizer.hasNext()){
-			this.child = this._makeChild(tokenizer);
-		}
+function listFactory(pathStr){
+	const path = new Path(pathStr);
+	const accessorList = path.tokenizer.getAccessList();
+	const reader = new Reader(accessorList.getFront());
 
-		this.get = makeGetter(this.token.accessor);
-	}
-
-	_makeChild(tokenizer){
-		return new (this.constructor)(tokenizer);
-	}
+	return reader.addChild(accessorList.getFollowing());
 }
 
 module.exports = {
+	Reader,
+	listFactory,
 	default: Reader
 };
