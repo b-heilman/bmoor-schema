@@ -2,7 +2,7 @@
 	"node": true,
 	"browser": true,
 	"jasmine": true,
-	"esversion": 6,
+	"esversion": 9,
 	"bitwise": true,
 	"camelcase": true,
 	"curly": true,

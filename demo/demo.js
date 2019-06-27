@@ -61,7 +61,7 @@ var bmoorSchema =
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 8);
+/******/ 	return __webpack_require__(__webpack_require__.s = 6);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -535,18 +535,17 @@ module.exports = {
 
 var bmoor = Object.create(__webpack_require__(0));
 
-bmoor.dom = __webpack_require__(12);
-bmoor.data = __webpack_require__(13);
-bmoor.flow = __webpack_require__(14);
-bmoor.array = __webpack_require__(4);
-bmoor.build = __webpack_require__(17);
-bmoor.object = __webpack_require__(21);
-bmoor.string = __webpack_require__(22);
-bmoor.promise = __webpack_require__(23);
+bmoor.dom = __webpack_require__(10);
+bmoor.data = __webpack_require__(11);
+bmoor.flow = __webpack_require__(12);
+bmoor.array = __webpack_require__(15);
+bmoor.build = __webpack_require__(16);
+bmoor.object = __webpack_require__(20);
+bmoor.string = __webpack_require__(21);
+bmoor.promise = __webpack_require__(22);
 
-bmoor.Memory = __webpack_require__(24);
-bmoor.Eventing = __webpack_require__(5);
-bmoor.Observable = __webpack_require__(25);
+bmoor.Memory = __webpack_require__(23);
+bmoor.Eventing = __webpack_require__(24);
 
 module.exports = bmoor;
 
@@ -563,7 +562,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var bmoor = __webpack_require__(1),
     makeGetter = bmoor.makeGetter,
-    Tokenizer = __webpack_require__(6).default;
+    Tokenizer = __webpack_require__(4).default;
 
 var Path = function () {
 	// normal path: foo.bar
@@ -692,476 +691,11 @@ module.exports = function (cb, min, max, settings) {
 		limit += diff;
 	};
 
-	fn.active = function () {
-		return !!limit;
-	};
-
 	return fn;
 };
 
 /***/ }),
 /* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-/**
- * Array helper functions
- * @module bmoor.array
- **/
-
-var bmoor = __webpack_require__(0);
-
-/**
- * Search an array for an element and remove it, starting at the begining or a specified location
- *
- * @function remove
- * @param {array} arr An array to be searched
- * @param {*} searchElement Content for which to be searched
- * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
- * @return {array} array containing removed element
- **/
-function remove(arr, searchElement, fromIndex) {
-	var pos = arr.indexOf(searchElement, fromIndex);
-
-	if (pos > -1) {
-		return arr.splice(pos, 1)[0];
-	}
-}
-
-/**
- * Search an array for an element and remove all instances of it, starting at the begining or a specified location
- *
- * @function remove
- * @param {array} arr An array to be searched
- * @param {*} searchElement Content for which to be searched
- * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
- * @return {integer} number of elements removed
- **/
-function removeAll(arr, searchElement, fromIndex) {
-	var r,
-	    pos = arr.indexOf(searchElement, fromIndex);
-
-	if (pos > -1) {
-		r = removeAll(arr, searchElement, pos + 1);
-		r.unshift(arr.splice(pos, 1)[0]);
-
-		return r;
-	} else {
-		return [];
-	}
-}
-
-function bisect(arr, value, func, preSorted) {
-	var idx,
-	    val,
-	    bottom = 0,
-	    top = arr.length - 1;
-
-	if (!preSorted) {
-		arr.sort(function (a, b) {
-			return func(a) - func(b);
-		});
-	}
-
-	if (func(arr[bottom]) >= value) {
-		return {
-			left: bottom,
-			right: bottom
-		};
-	}
-
-	if (func(arr[top]) <= value) {
-		return {
-			left: top,
-			right: top
-		};
-	}
-
-	if (arr.length) {
-		while (top - bottom > 1) {
-			idx = Math.floor((top + bottom) / 2);
-			val = func(arr[idx]);
-
-			if (val === value) {
-				top = idx;
-				bottom = idx;
-			} else if (val > value) {
-				top = idx;
-			} else {
-				bottom = idx;
-			}
-		}
-
-		// if it is one of the end points, make it that point
-		if (top !== idx && func(arr[top]) === value) {
-			return {
-				left: top,
-				right: top
-			};
-		} else if (bottom !== idx && func(arr[bottom]) === value) {
-			return {
-				left: bottom,
-				right: bottom
-			};
-		} else {
-			return {
-				left: bottom,
-				right: top
-			};
-		}
-	}
-}
-
-/**
- * Compare two arrays.
- *
- * @function remove
- * @param {array} arr1 An array to be compared
- * @param {array} arr2 An array to be compared
- * @param {function} func The comparison function
- * @return {object} an object containing the elements unique to the left, matched, and unqiue to the right
- **/
-function compare(arr1, arr2, func) {
-	var cmp,
-	    left = [],
-	    right = [],
-	    leftI = [],
-	    rightI = [];
-
-	arr1 = arr1.slice(0);
-	arr2 = arr2.slice(0);
-
-	arr1.sort(func);
-	arr2.sort(func);
-
-	while (arr1.length > 0 && arr2.length > 0) {
-		cmp = func(arr1[0], arr2[0]);
-
-		if (cmp < 0) {
-			left.push(arr1.shift());
-		} else if (cmp > 0) {
-			right.push(arr2.shift());
-		} else {
-			leftI.push(arr1.shift());
-			rightI.push(arr2.shift());
-		}
-	}
-
-	while (arr1.length) {
-		left.push(arr1.shift());
-	}
-
-	while (arr2.length) {
-		right.push(arr2.shift());
-	}
-
-	return {
-		left: left,
-		intersection: {
-			left: leftI,
-			right: rightI
-		},
-		right: right
-	};
-}
-
-/**
- * Create a new array that is completely unique
- *
- * @function unique
- * @param {array} arr The array to be made unique
- * @param {function|boolean} sort If boolean === true, array is presorted.  If function, use to sort
- **/
-function unique(arr, sort, uniqueFn) {
-	var rtn = [];
-
-	if (arr.length) {
-		if (sort) {
-			// more efficient because I can presort
-			if (bmoor.isFunction(sort)) {
-				arr = arr.slice(0).sort(sort);
-			}
-
-			var last = void 0;
-
-			for (var i = 0, c = arr.length; i < c; i++) {
-				var d = arr[i],
-				    v = uniqueFn ? uniqueFn(d) : d;
-
-				if (v !== last) {
-					last = v;
-					rtn.push(d);
-				}
-			}
-		} else if (uniqueFn) {
-			var hash = {};
-
-			for (var _i = 0, _c = arr.length; _i < _c; _i++) {
-				var _d = arr[_i],
-				    _v = uniqueFn(_d);
-
-				if (!hash[_v]) {
-					hash[_v] = true;
-					rtn.push(_d);
-				}
-			}
-		} else {
-			// greedy and inefficient
-			for (var _i2 = 0, _c2 = arr.length; _i2 < _c2; _i2++) {
-				var _d2 = arr[_i2];
-
-				if (rtn.indexOf(_d2) === -1) {
-					rtn.push(_d2);
-				}
-			}
-		}
-	}
-
-	return rtn;
-}
-
-// I could probably make this sexier, like allow uniqueness algorithm, but I'm keeping it simple for now
-function intersection(arr1, arr2) {
-	var rtn = [];
-
-	if (arr1.length > arr2.length) {
-		var t = arr1;
-
-		arr1 = arr2;
-		arr2 = t;
-	}
-
-	for (var i = 0, c = arr1.length; i < c; i++) {
-		var d = arr1[i];
-
-		if (arr2.indexOf(d) !== -1) {
-			rtn.push(d);
-		}
-	}
-
-	return rtn;
-}
-
-function difference(arr1, arr2) {
-	var rtn = [];
-
-	for (var i = 0, c = arr1.length; i < c; i++) {
-		var d = arr1[i];
-
-		if (arr2.indexOf(d) === -1) {
-			rtn.push(d);
-		}
-	}
-
-	return rtn;
-}
-
-function equals(arr1, arr2) {
-	if (arr1 === arr2) {
-		return true;
-	} else if (arr1.length !== arr2.length) {
-		return false;
-	} else {
-		for (var i = 0, c = arr1.length; i < c; i++) {
-			if (arr1[i] !== arr2[i]) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-}
-
-function watch(arr, insert, remove, preload) {
-	if (insert) {
-		var oldPush = arr.push.bind(arr);
-		var oldUnshift = arr.unshift.bind(arr);
-
-		arr.push = function () {
-			for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-				args[_key] = arguments[_key];
-			}
-
-			args.forEach(insert);
-
-			oldPush.apply(undefined, args);
-		};
-
-		arr.unshift = function () {
-			for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-				args[_key2] = arguments[_key2];
-			}
-
-			args.forEach(insert);
-
-			oldUnshift.apply(undefined, args);
-		};
-
-		if (preload) {
-			arr.forEach(insert);
-		}
-	}
-
-	if (remove) {
-		var oldShift = arr.shift.bind(arr);
-		var oldPop = arr.pop.bind(arr);
-		var oldSplice = arr.splice.bind(arr);
-
-		arr.shift = function () {
-			remove(oldShift.apply(undefined, arguments));
-		};
-
-		arr.pop = function () {
-			remove(oldPop.apply(undefined, arguments));
-		};
-
-		arr.splice = function () {
-			var res = oldSplice.apply(undefined, arguments);
-
-			res.forEach(remove);
-
-			return res;
-		};
-	}
-}
-
-module.exports = {
-	remove: remove,
-	removeAll: removeAll,
-	bisect: bisect,
-	compare: compare,
-	unique: unique,
-	intersection: intersection,
-	difference: difference,
-	watch: watch,
-	equals: equals
-};
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var core = __webpack_require__(0);
-var array = __webpack_require__(4);
-
-var Eventing = function () {
-	function Eventing() {
-		_classCallCheck(this, Eventing);
-
-		this._listeners = {};
-	}
-
-	_createClass(Eventing, [{
-		key: 'on',
-		value: function on(event, cb) {
-			var listeners = null;
-
-			if (!this._listeners[event]) {
-				this._listeners[event] = [];
-			}
-
-			listeners = this._listeners[event];
-
-			listeners.push(cb);
-
-			return function clear$on() {
-				listeners.splice(listeners.indexOf(cb), 1);
-			};
-		}
-	}, {
-		key: 'once',
-		value: function once(event, cb) {
-			var clear = null;
-			var fn = function fn() {
-				clear();
-				cb.apply(undefined, arguments);
-			};
-
-			clear = this.on(event, fn);
-
-			return clear;
-		}
-	}, {
-		key: 'subscribe',
-		value: function subscribe(subscriptions) {
-			var dis = this;
-			var kills = [];
-			var events = Object.keys(subscriptions);
-
-			events.forEach(function (event) {
-				var action = subscriptions[event];
-
-				kills.push(dis.on(event, action));
-			});
-
-			return function killAll() {
-				kills.forEach(function (kill) {
-					kill();
-				});
-			};
-		}
-	}, {
-		key: 'trigger',
-		value: function trigger(event) {
-			for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-				args[_key - 1] = arguments[_key];
-			}
-
-			if (this.hasWaiting(event)) {
-				// slice and deep copy in case someone gets cute and unregisters
-				try {
-					var callbacks = this._listeners[event];
-					return Promise.all(callbacks.slice(0).map(function (cb) {
-						var fn = null;
-
-						if (core.isArray(cb)) {
-							if (cb.length) {
-								fn = cb.shift();
-							}
-
-							if (!cb.length) {
-								array.remove(callbacks, cb);
-							}
-						} else {
-							fn = cb;
-						}
-
-						if (fn) {
-							return fn.apply(undefined, args);
-						} else {
-							return;
-						}
-					}));
-				} catch (ex) {
-					return Promise.reject(ex);
-				}
-			} else {
-				return Promise.resolve([]);
-			}
-		}
-	}, {
-		key: 'hasWaiting',
-		value: function hasWaiting(event) {
-			return !!this._listeners[event];
-		}
-	}]);
-
-	return Eventing;
-}();
-
-module.exports = Eventing;
-
-/***/ }),
-/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1173,7 +707,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var bmoor = __webpack_require__(1);
 
-var _require = __webpack_require__(7),
+var _require = __webpack_require__(5),
     AccessList = _require.AccessList;
 
 function nextToken(path) {
@@ -1367,9 +901,6 @@ var Tokenizer = function () {
 
 			return new AccessList(this.accessors);
 		}
-
-		// TODO : I don't think chunk is used anymore
-
 	}, {
 		key: 'chunk',
 		value: function chunk() {
@@ -1377,11 +908,12 @@ var Tokenizer = function () {
 
 			if (rtn === undefined) {
 				var cur = null;
+				var token = null;
 
 				rtn = [];
 
 				for (var i = 0, c = this.tokens.length; i < c; i++) {
-					var token = this.tokens[i];
+					token = this.tokens[i];
 
 					if (cur) {
 						if (token.value.charAt(0) === '[') {
@@ -1394,13 +926,19 @@ var Tokenizer = function () {
 					}
 
 					if (token.type !== 'linear') {
-						rtn.push(cur);
+						rtn.push({
+							type: token.type,
+							path: cur
+						});
 						cur = null;
 					}
 				}
 
 				if (cur) {
-					rtn.push(cur);
+					rtn.push({
+						type: token.type,
+						path: cur
+					});
 				}
 
 				this.chunks = rtn;
@@ -1430,7 +968,7 @@ var Tokenizer = function () {
 	}, {
 		key: 'root',
 		value: function root(returnAccessor) {
-			return returnAccessor ? this.getAccessList().getFront().access.path : this.chunk()[0];
+			return returnAccessor ? this.getAccessList().getFront().access.path : this.chunk()[0].path;
 		}
 	}, {
 		key: 'remainder',
@@ -1456,7 +994,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 7 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1466,7 +1004,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var _require = __webpack_require__(27),
+var _require = __webpack_require__(26),
     Accessor = _require.Accessor;
 
 var AccessList = function () {
@@ -1521,44 +1059,44 @@ module.exports = {
 };
 
 /***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var bmoorSchema = __webpack_require__(7);
+
+console.log('We are running speed tests');
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = {
+	encode: __webpack_require__(8),
+	Generator: __webpack_require__(27),
+	Path: __webpack_require__(2),
+	validate: __webpack_require__(30)
+};
+
+/***/ }),
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var bmoorSchema = __webpack_require__(9);
-
-console.log('We are running speed tests');
+module.exports = {
+    bmoorSchema: __webpack_require__(9).default,
+    jsonSchema: __webpack_require__(25).default
+};
 
 /***/ }),
 /* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = {
-	encode: __webpack_require__(10),
-	Generator: __webpack_require__(28),
-	Path: __webpack_require__(2),
-	validate: __webpack_require__(31)
-};
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-module.exports = {
-    bmoorSchema: __webpack_require__(11).default,
-    jsonSchema: __webpack_require__(26).default
-};
-
-/***/ }),
-/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1681,7 +1219,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 12 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1984,7 +1522,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 13 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2025,20 +1563,20 @@ module.exports = {
 };
 
 /***/ }),
-/* 14 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 module.exports = {
-	soon: __webpack_require__(15),
-	debounce: __webpack_require__(16),
+	soon: __webpack_require__(13),
+	debounce: __webpack_require__(14),
 	window: __webpack_require__(3)
 };
 
 /***/ }),
-/* 15 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2075,15 +1613,11 @@ module.exports = function (cb, time, settings) {
 		fn.clear();
 	};
 
-	fn.active = function () {
-		return !!timeout;
-	};
-
 	return fn;
 };
 
 /***/ }),
-/* 16 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2138,24 +1672,289 @@ module.exports = function (cb, time, settings) {
 		limit += diff;
 	};
 
-	fn.active = function () {
-		return !!timeout;
-	};
-
 	return fn;
 };
 
 /***/ }),
-/* 17 */
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * Array helper functions
+ * @module bmoor.array
+ **/
+
+var bmoor = __webpack_require__(0);
+
+/**
+ * Search an array for an element and remove it, starting at the begining or a specified location
+ *
+ * @function remove
+ * @param {array} arr An array to be searched
+ * @param {*} searchElement Content for which to be searched
+ * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
+ * @return {array} array containing removed element
+ **/
+function remove(arr, searchElement, fromIndex) {
+	var pos = arr.indexOf(searchElement, fromIndex);
+
+	if (pos > -1) {
+		return arr.splice(pos, 1)[0];
+	}
+}
+
+/**
+ * Search an array for an element and remove all instances of it, starting at the begining or a specified location
+ *
+ * @function remove
+ * @param {array} arr An array to be searched
+ * @param {*} searchElement Content for which to be searched
+ * @param {integer} fromIndex The begining index from which to begin the search, defaults to 0
+ * @return {integer} number of elements removed
+ **/
+function removeAll(arr, searchElement, fromIndex) {
+	var r,
+	    pos = arr.indexOf(searchElement, fromIndex);
+
+	if (pos > -1) {
+		r = removeAll(arr, searchElement, pos + 1);
+		r.unshift(arr.splice(pos, 1)[0]);
+
+		return r;
+	} else {
+		return [];
+	}
+}
+
+function bisect(arr, value, func, preSorted) {
+	var idx,
+	    val,
+	    bottom = 0,
+	    top = arr.length - 1;
+
+	if (!preSorted) {
+		arr.sort(function (a, b) {
+			return func(a) - func(b);
+		});
+	}
+
+	if (func(arr[bottom]) >= value) {
+		return {
+			left: bottom,
+			right: bottom
+		};
+	}
+
+	if (func(arr[top]) <= value) {
+		return {
+			left: top,
+			right: top
+		};
+	}
+
+	if (arr.length) {
+		while (top - bottom > 1) {
+			idx = Math.floor((top + bottom) / 2);
+			val = func(arr[idx]);
+
+			if (val === value) {
+				top = idx;
+				bottom = idx;
+			} else if (val > value) {
+				top = idx;
+			} else {
+				bottom = idx;
+			}
+		}
+
+		// if it is one of the end points, make it that point
+		if (top !== idx && func(arr[top]) === value) {
+			return {
+				left: top,
+				right: top
+			};
+		} else if (bottom !== idx && func(arr[bottom]) === value) {
+			return {
+				left: bottom,
+				right: bottom
+			};
+		} else {
+			return {
+				left: bottom,
+				right: top
+			};
+		}
+	}
+}
+
+/**
+ * Compare two arrays.
+ *
+ * @function remove
+ * @param {array} arr1 An array to be compared
+ * @param {array} arr2 An array to be compared
+ * @param {function} func The comparison function
+ * @return {object} an object containing the elements unique to the left, matched, and unqiue to the right
+ **/
+function compare(arr1, arr2, func) {
+	var cmp,
+	    left = [],
+	    right = [],
+	    leftI = [],
+	    rightI = [];
+
+	arr1 = arr1.slice(0);
+	arr2 = arr2.slice(0);
+
+	arr1.sort(func);
+	arr2.sort(func);
+
+	while (arr1.length > 0 && arr2.length > 0) {
+		cmp = func(arr1[0], arr2[0]);
+
+		if (cmp < 0) {
+			left.push(arr1.shift());
+		} else if (cmp > 0) {
+			right.push(arr2.shift());
+		} else {
+			leftI.push(arr1.shift());
+			rightI.push(arr2.shift());
+		}
+	}
+
+	while (arr1.length) {
+		left.push(arr1.shift());
+	}
+
+	while (arr2.length) {
+		right.push(arr2.shift());
+	}
+
+	return {
+		left: left,
+		intersection: {
+			left: leftI,
+			right: rightI
+		},
+		right: right
+	};
+}
+
+/**
+ * Create a new array that is completely unique
+ *
+ * @function unique
+ * @param {array} arr The array to be made unique
+ * @param {function|boolean} sort If boolean === true, array is presorted.  If function, use to sort
+ **/
+function unique(arr, sort, uniqueFn) {
+	var rtn = [];
+
+	if (arr.length) {
+		if (sort) {
+			// more efficient because I can presort
+			if (bmoor.isFunction(sort)) {
+				arr = arr.slice(0).sort(sort);
+			}
+
+			var last = void 0;
+
+			for (var i = 0, c = arr.length; i < c; i++) {
+				var d = arr[i],
+				    v = uniqueFn ? uniqueFn(d) : d;
+
+				if (v !== last) {
+					last = v;
+					rtn.push(d);
+				}
+			}
+		} else if (uniqueFn) {
+			var hash = {};
+
+			for (var _i = 0, _c = arr.length; _i < _c; _i++) {
+				var _d = arr[_i],
+				    _v = uniqueFn(_d);
+
+				if (!hash[_v]) {
+					hash[_v] = true;
+					rtn.push(_d);
+				}
+			}
+		} else {
+			// greedy and inefficient
+			for (var _i2 = 0, _c2 = arr.length; _i2 < _c2; _i2++) {
+				var _d2 = arr[_i2];
+
+				if (rtn.indexOf(_d2) === -1) {
+					rtn.push(_d2);
+				}
+			}
+		}
+	}
+
+	return rtn;
+}
+
+// I could probably make this sexier, like allow uniqueness algorithm, but I'm keeping it simple for now
+function intersection(arr1, arr2) {
+	var rtn = [];
+
+	if (arr1.length > arr2.length) {
+		var t = arr1;
+
+		arr1 = arr2;
+		arr2 = t;
+	}
+
+	for (var i = 0, c = arr1.length; i < c; i++) {
+		var d = arr1[i];
+
+		if (arr2.indexOf(d) !== -1) {
+			rtn.push(d);
+		}
+	}
+
+	return rtn;
+}
+
+function difference(arr1, arr2) {
+	var rtn = [];
+
+	for (var i = 0, c = arr1.length; i < c; i++) {
+		var d = arr1[i];
+
+		if (arr2.indexOf(d) === -1) {
+			rtn.push(d);
+		}
+	}
+
+	return rtn;
+}
+
+module.exports = {
+	remove: remove,
+	removeAll: removeAll,
+	bisect: bisect,
+	compare: compare,
+	unique: unique,
+	intersection: intersection,
+	difference: difference
+};
+
+/***/ }),
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 var bmoor = __webpack_require__(0),
-    mixin = __webpack_require__(18),
-    plugin = __webpack_require__(19),
-    decorate = __webpack_require__(20);
+    mixin = __webpack_require__(17),
+    plugin = __webpack_require__(18),
+    decorate = __webpack_require__(19);
 
 function proc(action, proto, def) {
 	var i, c;
@@ -2210,7 +2009,7 @@ maker.plugin = plugin;
 module.exports = maker;
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2225,7 +2024,7 @@ module.exports = function (to, from) {
 };
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2282,7 +2081,7 @@ module.exports = function (to, from, ctx) {
 };
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2328,7 +2127,7 @@ module.exports = function (to, from) {
 };
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2593,8 +2392,6 @@ function equals(obj1, obj2) {
 	return false;
 }
 
-// TODO : property watch
-
 module.exports = {
 	keys: keys,
 	values: values,
@@ -2610,7 +2407,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2808,7 +2605,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2908,7 +2705,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2996,7 +2793,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3004,181 +2801,97 @@ module.exports = {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+var Eventing = function () {
+	function Eventing() {
+		_classCallCheck(this, Eventing);
 
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var core = __webpack_require__(0);
-var flowWindow = __webpack_require__(3);
-var Eventing = __webpack_require__(5);
-
-var _require = __webpack_require__(4),
-    equals = _require.equals;
-
-var Observable = function (_Eventing) {
-	_inherits(Observable, _Eventing);
-
-	function Observable() {
-		var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-		_classCallCheck(this, Observable);
-
-		var _this = _possibleConstructorReturn(this, (Observable.__proto__ || Object.getPrototypeOf(Observable)).call(this));
-
-		_this.settings = settings;
-
-		_this._next = flowWindow(function () {
-			var args = _this.currentArgs;
-
-			_this.trigger.apply(_this, ['next'].concat(_toConsumableArray(args)));
-		}, settings.windowMin || 0, settings.windowMax || 30);
-		return _this;
+		this._listeners = {};
 	}
 
-	_createClass(Observable, [{
-		key: 'next',
-		value: function next() {
-			for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-				args[_key] = arguments[_key];
+	_createClass(Eventing, [{
+		key: "on",
+		value: function on(event, cb) {
+			var listeners;
+
+			if (!this._listeners[event]) {
+				this._listeners[event] = [];
 			}
 
-			if (!args.length) {
-				throw new Error('Observable::next, must be called with arguments');
-			}
+			listeners = this._listeners[event];
 
-			this.currentArgs = args;
+			listeners.push(cb);
 
-			this._next();
+			return function clear$on() {
+				listeners.splice(listeners.indexOf(cb), 1);
+			};
 		}
 	}, {
-		key: 'subscribe',
-		value: function subscribe(onNext, onError, onComplete) {
-			var _this2 = this;
+		key: "once",
+		value: function once(event, cb) {
+			var clear,
+			    fn = function fn() {
+				clear();
+				cb.apply(this, arguments);
+			};
 
-			var config = null;
+			clear = this.on(event, fn);
 
-			if (core.isFunction(onNext) || core.isArray(onNext)) {
-				config = {
-					next: onNext,
-					error: onError ? onError : function () {
-						// anything for default?
-					},
-					complete: onComplete ? onComplete : function () {
-						_this2.destroy();
-					}
-				};
-			} else {
-				config = onNext;
-			}
-
-			var disconnect = _get(Observable.prototype.__proto__ || Object.getPrototypeOf(Observable.prototype), 'subscribe', this).call(this, config);
-
-			if (this.currentArgs && config.next) {
-				var fn = null;
-
-				// make it act like a hot observable
-				var _args = this.currentArgs;
-				var cb = config.next;
-
-				if (core.isArray(cb)) {
-					if (cb.length) {
-						if (this._next.active()) {
-							fn = cb[0];
-
-							var myArgs = _args;
-							cb[0] = function () {
-								for (var _len2 = arguments.length, params = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-									params[_key2] = arguments[_key2];
-								}
-
-								if (equals(params, myArgs)) {
-									// stub it for when next fires
-									// there's a possible race condition with this, that a second value comes in as
-									// the window is active... the second value will get eaten, so the else
-									// blow tries to help there
-								} else {
-									var f = cb.shift();
-									f.apply(undefined, params);
-								}
-							};
-						} else {
-							fn = cb.shift();
-						}
-					}
-				} else {
-					fn = cb;
-				}
-
-				fn.apply(undefined, _toConsumableArray(_args));
-			}
-
-			return disconnect;
+			return clear;
 		}
-
-		// return back a promise that is active on the 'next'
-
 	}, {
-		key: 'promise',
-		value: function promise() {
-			var _this3 = this;
+		key: "subscribe",
+		value: function subscribe(subscriptions) {
+			var dis = this,
+			    kills = [],
+			    events = Object.keys(subscriptions);
 
-			if (!this.currentArgs || this._next.active()) {
-				if (!this._promise) {
-					this._promise = new Promise(function (resolve, reject) {
-						var next = null;
-						var error = null;
+			events.forEach(function (event) {
+				var action = subscriptions[event];
 
-						next = _this3.once('next', function (val) {
-							_this3._promise = null;
+				kills.push(dis.on(event, action));
+			});
 
-							error();
-							resolve(val);
-						});
+			return function killAll() {
+				kills.forEach(function (kill) {
+					kill();
+				});
+			};
+		}
+	}, {
+		key: "trigger",
+		value: function trigger(event) {
+			var _this = this;
 
-						error = _this3.once('error', function (ex) {
-							_this3._promise = null;
+			var args = Array.prototype.slice.call(arguments, 1);
 
-							next();
-							reject(ex);
-						});
-					});
-				}
-
-				return this._promise;
-			} else {
-				var _args2 = this.currentArgs;
-
-				return Promise.resolve.apply(Promise, _toConsumableArray(_args2));
+			if (this.hasWaiting(event)) {
+				this._listeners[event].slice(0).forEach(function (cb) {
+					cb.apply(_this, args);
+				});
 			}
 		}
 	}, {
-		key: 'destroy',
-		value: function destroy() {
-			this.currentArgs = null;
-
-			this.trigger('complete');
+		key: "hasWaiting",
+		value: function hasWaiting(event) {
+			return !!this._listeners[event];
 		}
 	}]);
 
-	return Observable;
-}(Eventing);
+	return Eventing;
+}();
 
-module.exports = Observable;
+module.exports = Eventing;
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var Tokenizer = __webpack_require__(6).default;
+var Tokenizer = __webpack_require__(4).default;
 
 var go;
 
@@ -3321,7 +3034,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3342,7 +3055,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3354,7 +3067,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var bmoor = __webpack_require__(1);
 var Path = __webpack_require__(2).default;
-var Writer = __webpack_require__(29).default;
+var Writer = __webpack_require__(28).default;
 
 var characterSet = '#$?<>()"\'\\ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -3526,7 +3239,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3544,7 +3257,7 @@ var bmoor = __webpack_require__(1);
 var makeSetter = bmoor.makeSetter;
 
 var Path = __webpack_require__(2).default;
-var Actionable = __webpack_require__(30).default;
+var Actionable = __webpack_require__(29).default;
 
 var Writer = function (_Actionable) {
 	_inherits(Writer, _Actionable);
@@ -3616,7 +3329,7 @@ function listFactory(pathStr) {
 	var accessorList = path.tokenizer.getAccessList();
 	var writer = new Writer(accessorList.getFront());
 
-	return writer.addChild(accessorList.getFollowing());
+	return writer.getList(accessorList.getFollowing());
 }
 
 module.exports = {
@@ -3626,7 +3339,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3639,7 +3352,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var makeGetter = __webpack_require__(1).makeGetter;
 
 var Path = __webpack_require__(2).default;
-var AccessList = __webpack_require__(7).default;
+var AccessList = __webpack_require__(5).default;
 
 var Action = function () {
 	function Action(accessor) {
@@ -3720,6 +3433,15 @@ var Action = function () {
 				return [this];
 			}
 		}
+	}, {
+		key: 'getList',
+		value: function getList(accessList, action) {
+			if (accessList) {
+				return this.addChild(accessList, action);
+			} else {
+				return [this];
+			}
+		}
 	}]);
 
 	return Action;
@@ -3731,7 +3453,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

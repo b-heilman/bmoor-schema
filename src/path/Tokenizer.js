@@ -188,17 +188,17 @@ class Tokenizer{
 		return new AccessList(this.accessors);
 	}
 
-	// TODO : I don't think chunk is used anymore
 	chunk(){
 		var rtn = this.chunks;
 
 		if ( rtn === undefined ){
 			let cur = null;
+			let token = null;
 
 			rtn = [];
 
 			for (let i = 0, c = this.tokens.length; i < c; i++){
-				let token = this.tokens[i];
+				token = this.tokens[i];
 
 				if (cur){
 					if ( token.value.charAt(0) === '[' ){
@@ -211,13 +211,19 @@ class Tokenizer{
 				}
 
 				if (token.type !== 'linear' ){
-					rtn.push(cur);
+					rtn.push({
+						type: token.type,
+						path: cur
+					});
 					cur = null;
 				}
 			}
 
 			if (cur){
-				rtn.push(cur);
+				rtn.push({
+					type: token.type,
+					path: cur
+				});
 			}
 
 			this.chunks = rtn;
@@ -246,7 +252,7 @@ class Tokenizer{
 
 	root(returnAccessor){
 		return returnAccessor ? 
-			this.getAccessList().getFront().access.path : this.chunk()[0];
+			this.getAccessList().getFront().access.path : this.chunk()[0].path;
 	}
 
 	remainder(){

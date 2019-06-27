@@ -1,6 +1,6 @@
 {
   "name": "bmoor-schema",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "Brian Heilman <das.ist.junk@gmail.com>",
   "description": "A simple schema pattern for UI interaction",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "gulp-load-plugins": "^1.5.0",
     "gulp-webserver": "0.9.1",
     "jasmine": "^2.9.0",
-    "jshint": "^2.9.5",
+    "jshint": "^2.10.1",
     "jshint-stylish": "2.1.0",
     "karma": "^2.0.4",
     "karma-chrome-launcher": "^2.2.0",

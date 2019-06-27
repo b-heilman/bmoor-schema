@@ -1,3 +1,4 @@
+
 var $ = require('gulp-load-plugins')(),
 	gulp = require('gulp'),
 	map = require('map-stream'),
@@ -12,59 +13,47 @@ var server;
 
 gulp.task('demo', function() {
 	return gulp.src(env.jsSrc)
-		.pipe(webpack({
-			entry: './'+env.demoConfig,
-			module: {
-				loaders: [{
-					test: /\.js$/,
-					loader: "babel-loader",
-					query: {
-    					presets: ['env']
-  					}
-				}],
-			},
-			output: {
-				filename: 'demo.js',
-				library: env.library,
-				libraryTarget: "var"
-			}
-		}))
-		.pipe(gulp.dest(env.demoDir));
+	.pipe(webpack({
+		entry: './'+env.demoConfig,
+		module: {
+			loaders: [{
+				test: /\.js$/,
+				loader: "babel-loader",
+				query: {
+					presets: ['env']
+					}
+			}],
+		},
+		output: {
+			filename: 'demo.js',
+			library: env.library,
+			libraryTarget: "var"
+		}
+	}))
+	.pipe(gulp.dest(env.demoDir));
 });
 
 gulp.task('library', function() {
 	return gulp.src(env.jsDemo)
-		.pipe(webpack({
-			entry: './'+env.libraryConfig,
-			module: {
-				loaders: [{
-					test: /\.js$/,
-					loader: "babel-loader",
-					query: {
-    				presets: ['env']
-  				}
-				}],
-			},
-			output: {
-				filename: env.name+'.js',
-				library: env.library,
-				libraryTarget: "var"
-			},
-			externals: env.externals
-		}))
-		.pipe(gulp.dest(env.distDir));
-});
-
-gulp.task('test-noexit', ['build'], function( done ) {
-	new Karma({
-		configFile: __dirname +'/'+ env.karmaConfig
-	},function(){
-		done();
-	}).start();
-});
-
-gulp.task('test', ['test-noexit'], function( done ) {
-	process.exit();
+	.pipe(webpack({
+		entry: './'+env.libraryConfig,
+		module: {
+			loaders: [{
+				test: /\.js$/,
+				loader: "babel-loader",
+				query: {
+				presets: ['env']
+				}
+			}],
+		},
+		output: {
+			filename: env.name+'.js',
+			library: env.library,
+			libraryTarget: "var"
+		},
+		externals: env.externals
+	}))
+	.pipe(gulp.dest(env.distDir));
 });
 
 gulp.task('test-ie', ['build','test-server'], function( done ) {
@@ -85,20 +74,33 @@ var failOnError = function() {
     });
 };
 
+function test(){
+	return gulp.src( env.jsSrc.map((d) => d.replace('!','')) )
+    .pipe( jshint() )
+    .pipe( jshint.reporter(stylish) )
+}
+
 gulp.task('build-lint', function() {
-    gulp.src( env.jsSrc.map((d) => d.replace('!','')) )
-        .pipe( jshint() )
-        .pipe( jshint.reporter(stylish) )
-        .pipe( failOnError() );
+    return test().pipe( failOnError() );
 });
 
 gulp.task('lint', function() {
-    gulp.src( env.jsSrc.map((d) => d.replace('!','')) )
-        .pipe( jshint() )
-        .pipe( jshint.reporter(stylish) );
+   return test();
 });
 
 gulp.task('build', ['build-lint', 'demo','library'] );
+
+gulp.task('test-noexit', ['build'], function( done ) {
+	new Karma({
+		configFile: __dirname +'/'+ env.karmaConfig
+	},function(){
+		done();
+	}).start();
+});
+
+gulp.task('test', ['test-noexit'], function( done ) {
+	process.exit();
+});
 
 gulp.task('watch', ['build'], function(){
 	gulp.watch(env.jsSrc.concat(['./'+env.demoConfig]), ['lint', 'demo','library']);

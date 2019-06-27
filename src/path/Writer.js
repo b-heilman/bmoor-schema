@@ -57,7 +57,7 @@ function listFactory(pathStr){
 	const accessorList = path.tokenizer.getAccessList();
 	const writer = new Writer(accessorList.getFront());
 
-	return writer.addChild(accessorList.getFollowing());
+	return writer.getList(accessorList.getFollowing());
 }
 
 

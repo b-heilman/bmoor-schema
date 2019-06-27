@@ -101,51 +101,56 @@ describe('bmoor-schema.Transformer', function(){
 
 	describe('::template', function(){
 		it('should work', function(){
-		const t = template({
-			person: {
-				fname: 'Brian',
-				lname: 'Halloman'
-			},
-			tools: [{
-				name: 'ok',
-				sublist: [{
-					foo: 'bar'
-				}]
-			}],
-			properties: [{
-				path: 'foo.bar',
-				something: 'orOther'
-			}]
-		});
+			const t = template({
+				person: {
+					fname: 'Brian',
+					lname: 'Halloman'
+				},
+				tools: [{
+					name: 'ok',
+					sublist: [{
+						foo: 'bar'
+					}]
+				}],
+				properties: [{
+					path: 'foo.bar',
+					something: 'orOther'
+				}],
+				strings: [
+					'foo',
+					'bar'
+				]
+			});
 
-		expect({
-			'properties': [
+			expect({
+				'properties': [
 					'person.fname',
 					'person.lname'
 				],
 				'children': {
-				'tools[]': {
-					'properties': [
-						'tools[].name'
-					],
-					'children': {
-						'sublist[]': {
-							'properties': [
-								'tools[].sublist[].foo'
-							],
-							'children': {}
+					'tools[]': {
+						'properties': [
+							'tools[].name'
+						],
+						'children': {
+							'sublist[]': {
+								'properties': [
+									'tools[].sublist[].foo'
+								],
+								'children': {}
+							}
 						}
-					}
-				},
-				'properties[]': {
-					'properties': [
-						'properties[].path',
-						'properties[].something'
-					],
-					'children': {}
+					},
+					'properties[]': {
+						'properties': [
+							'properties[].path',
+							'properties[].something'
+						],
+						'children': {}
+					},
+					'strings[]': null
 				}
-				}
-		}).toEqual(t);
+			}).toEqual(t);
 		});
 	});
 	/*

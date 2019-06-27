@@ -10,7 +10,7 @@ function listFactory(pathStr){
 	const accessorList = path.tokenizer.getAccessList();
 	const reader = new Reader(accessorList.getFront());
 
-	return reader.addChild(accessorList.getFollowing());
+	return reader.getList(accessorList.getFollowing());
 }
 
 module.exports = {

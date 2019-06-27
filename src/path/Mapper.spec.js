@@ -6,7 +6,7 @@ const Mapper = require('./Mapper.js').default;
 
 describe('path/Mapper.js', function(){
 	describe('simple copy', function(){
-		it('should #go correctly', function(){
+		it('should #go correctly via #addPath', function(){
 			let mapper = new Mapper();
 			let fromPath = new Path('foo.bar');
 			let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
@@ -25,18 +25,46 @@ describe('path/Mapper.js', function(){
 			};
 			const to = {};
 
-			mapper.go(from, to);
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: {
+						world: '123'
+					}
+				});
+			});
+		});
 
-			expect(to).toEqual({
-				hello: {
-					world: '123'
+		it('should #go correctly via #factory', function(done){
+			let mapper = new Mapper();
+
+			mapper.addPairing(
+				readerFactory('foo.bar'),
+				writerFactory('hello.world')
+			);
+
+			const from = {
+				foo: {
+					bar: '123'
 				}
+			};
+			const to = {};
+
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: {
+						world: '123'
+					}
+				});
+
+				done();
 			});
 		});
 	});
 
 	describe('array copy', function(){
-		it('should #go correctly', function(){
+		it('should #go correctly', function(done){
 			let mapper = new Mapper();
 			let fromPath = new Path('foo[].bar');
 			let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
@@ -55,16 +83,19 @@ describe('path/Mapper.js', function(){
 			};
 			const to = {};
 
-			mapper.go(from, to);
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: [{
+						world: '123'
+					}]
+				});
 
-			expect(to).toEqual({
-				hello: [{
-					world: '123'
-				}]
+				done();
 			});
 		});
 
-		it('should #go correctly in multiples', function(){
+		it('should #go correctly in multiples', function(done){
 			let mapper = new Mapper();
 
 			mapper.addPairing(
@@ -81,20 +112,56 @@ describe('path/Mapper.js', function(){
 			};
 			const to = {};
 
-			mapper.go(from, to);
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: [{
+						world: '123'
+					}, {
+						world: '456'
+					}]
+				});
 
-			expect(to).toEqual({
-				hello: [{
-					world: '123'
-				}, {
-					world: '456'
-				}]
+				done();
+			});
+		});
+
+		it('should #go correctly flat arrays', function(done){
+			let mapper = new Mapper();
+
+			mapper.addPairing(
+				readerFactory('foo.bar[]'),
+				writerFactory('hello.world[]')
+			);
+			
+			const from = {
+				foo: {
+					bar: [
+						'123',
+						'456'
+					]
+				}
+			};
+			const to = {};
+
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: {
+						world: [
+							'123',
+							'456'
+						]
+					}
+				});
+
+				done();
 			});
 		});
 	});
 
 	describe('multi array', function(){
-		it('should #go correctly', function(){
+		it('should #go correctly', function(done){
 			const mapper = new Mapper();
 
 			mapper.addPairing(
@@ -111,20 +178,23 @@ describe('path/Mapper.js', function(){
 			};
 			const to = {};
 
-			mapper.go(from, to);
-
-			expect(to).toEqual({
-				zwei: [{
-					hello: [{
-						world: {
-							value: '123'
-						}
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					zwei: [{
+						hello: [{
+							world: {
+								value: '123'
+							}
+						}]
 					}]
-				}]
+				});
+
+				done();
 			});
 		});
 
-		it('should #go correctly in multiples', function(){
+		it('should #go correctly in multiples', function(done){
 			const mapper = new Mapper();
 
 			mapper.addPairing(
@@ -143,26 +213,29 @@ describe('path/Mapper.js', function(){
 			};
 			const to = {};
 
-			mapper.go(from, to);
-
-			expect(to).toEqual({
-				zwei: [{
-					hello: [{
-						world: {
-							value: '123'
-						}
-					}, {
-						world: {
-							value: '456'
-						}
+			mapper.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					zwei: [{
+						hello: [{
+							world: {
+								value: '123'
+							}
+						}, {
+							world: {
+								value: '456'
+							}
+						}]
 					}]
-				}]
+				});
+
+				done();
 			});
 		});
 	});
 
 	describe('with actions', function(){
-		it('should work with a single action', function(){
+		it('should work with a single action', function(done){
 			const mapper = new Mapper([{
 				from: 'value.one',
 				to: 'eins'
@@ -208,26 +281,29 @@ describe('path/Mapper.js', function(){
 
 					return rtn;
 				}
-			});
+			})
+			.then(() => {
+				expect(to).toEqual({
+					eins: 1,
+					zwei: 2
+				});
 
-			expect(to).toEqual({
-				eins: 1,
-				zwei: 2
-			});
+				expect(classes).toEqual({
+					foo: [{
+						parent: {
+							eins: 1,
+							zwei: 2
+						},
+						eins: 10,
+						zwei: 20
+					}]
+				});
 
-			expect(classes).toEqual({
-				foo: [{
-					parent: {
-						eins: 1,
-						zwei: 2
-					},
-					eins: 10,
-					zwei: 20
-				}]
+				done();
 			});
 		});
 
-		it('should work with a multiple actions', function(){
+		it('should work with a multiple actions', function(done){
 			const mapper = new Mapper([{
 				from: 'value.one',
 				to: 'eins'
@@ -289,43 +365,46 @@ describe('path/Mapper.js', function(){
 
 					return rtn;
 				}
-			});
+			})
+			.then(() => {
+				expect(to).toEqual({
+					eins: 1,
+					zwei: 2
+				});
 
-			expect(to).toEqual({
-				eins: 1,
-				zwei: 2
-			});
-
-			expect(classes).toEqual({
-				root: [{
-					parent: {
-						eins: 1,
-						zwei: 2
-					},
-					ref: 123
-				}],
-				foo: [{
-					parent: {
-						ref: 123,
+				expect(classes).toEqual({
+					root: [{
 						parent: {
 							eins: 1,
 							zwei: 2
-						}
-					},
-					eins: 10,
-					zwei: 20
-				}],
-				bar: [{
-					parent: {
-						ref: 123,
+						},
+						ref: 123
+					}],
+					foo: [{
 						parent: {
-							eins: 1,
-							zwei: 2
-						}
-					},
-					eins: 100,
-					zwei: 200
-				}]
+							ref: 123,
+							parent: {
+								eins: 1,
+								zwei: 2
+							}
+						},
+						eins: 10,
+						zwei: 20
+					}],
+					bar: [{
+						parent: {
+							ref: 123,
+							parent: {
+								eins: 1,
+								zwei: 2
+							}
+						},
+						eins: 100,
+						zwei: 200
+					}]
+				});
+
+				done();
 			});
 		});
 	});

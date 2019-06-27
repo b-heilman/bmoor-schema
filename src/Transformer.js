@@ -12,8 +12,8 @@ class Transformer {
 		this.mapper.addPairing(from, to);
 	}
 
-	go(from, to){
-		return this.mapper.go(from, to);
+	go(from, to, ops){
+		return this.mapper.go(from, to, ops);
 	}
 }
 
@@ -33,19 +33,23 @@ module.exports = {
 			while(chunks.length){
 				let chunk = chunks.shift();
 
-				if (chunks.length){
-					let child = r.children[chunk];
+				if (chunk.type !== 'linear'){
+					if (chunks.length){
+						let child = r.children[chunk.path];
 
-					if (!child){
-						child = {
-							properties: [],
-							children: {}
-						};
+						if (!child){
+							child = {
+								properties: [],
+								children: {}
+							};
 
-						r.children[chunk] = child;
+							r.children[chunk.path] = child;
+						}
+
+						r = child;
+					} else {
+						r.children[chunk.path] = null;
 					}
-
-					r = child;
 				} else {
 					r.properties.push(p.path);
 				}

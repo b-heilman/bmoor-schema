@@ -48,22 +48,65 @@ describe('bmoor-schema::Tokenizer', function(){
 			}]);
 		});
 
-		it ('should correctly parse with array', function(){
-			var tokenized = new Tokenizer(
-				'foo[].bar'
-			);
+		describe('arrays', function(){
+			it ('should work correctly in the front', function(){
+				var tokenized = new Tokenizer(
+					'[].foo.bar'
+				);
 
-			expect(tokenized.tokens).toEqual([{
-				type: 'array',
-				value: 'foo[]',
-				next: 'bar',
-				accessor: 'foo'
-			}, {
-				type: 'linear',
-				value: 'bar',
-				next: '',
-				accessor: 'bar'
-			}]);
+				expect(tokenized.tokens).toEqual([{
+					type: 'array',
+					value: '[]',
+					next: 'foo.bar',
+					accessor: null
+				}, {
+					type: 'linear',
+					value: 'foo',
+					next: 'bar',
+					accessor: 'foo'
+				}, {
+					type: 'linear',
+					value: 'bar',
+					next: '',
+					accessor: 'bar'
+				}]);
+			});
+
+			it ('should work correctly in the middle', function(){
+				var tokenized = new Tokenizer(
+					'foo[].bar'
+				);
+
+				expect(tokenized.tokens).toEqual([{
+					type: 'array',
+					value: 'foo[]',
+					next: 'bar',
+					accessor: 'foo'
+				}, {
+					type: 'linear',
+					value: 'bar',
+					next: '',
+					accessor: 'bar'
+				}]);
+			});
+
+			it ('should work correctly in the end', function(){
+				var tokenized = new Tokenizer(
+					'foo.bar[]'
+				);
+
+				expect(tokenized.tokens).toEqual([{
+					type: 'linear',
+					value: 'foo',
+					next: 'bar[]',
+					accessor: 'foo'
+				}, {
+					type: 'array',
+					value: 'bar[]',
+					next: '',
+					accessor: 'bar'
+				}]);
+			});
 		});
 
 		it ('should correctly parse with action', function(){
@@ -147,13 +190,13 @@ describe('bmoor-schema::Tokenizer', function(){
 
 		it('should correctly parse with action and array', function(){
 			var tokenized = new Tokenizer(
-				'#hello-world[]foo.bar'
+				'#hello-world[].foo.bar'
 			);
 
 			expect(tokenized.tokens).toEqual([{
 				type: 'action',
 				value: 'hello-world',
-				next: '[]foo.bar',
+				next: '[].foo.bar',
 				accessor: null
 			}, {
 				type: 'array',
@@ -251,16 +294,40 @@ describe('bmoor-schema::Tokenizer', function(){
 		]);
 	});
 
-	it('::chunk', function(){
-		var tokenized = new Tokenizer(
-			'foo.bar["hello.world"].eins[][].zwei'
-		);
+	describe('::chunk', function(){
+		it('should work with complex paths', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
 
-		expect(tokenized.chunk()).toEqual([
-			'foo.bar["hello.world"].eins[]',
-			'[]',
-			'zwei'
-		]);
+			expect(tokenized.chunk()).toEqual([{
+				type: 'array',
+				path: 'foo.bar["hello.world"].eins[]'
+			}, {
+				type: 'array',
+				path: '[]'
+			}, {
+				type: 'linear',
+				path: 'zwei'
+			}]);
+		});
+		
+		it('should work with actions', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar#helloWorld.eins[][].zwei'
+			);
+
+			expect(tokenized.chunk()).toEqual([{
+				type: 'array',
+				path: 'foo.bar#helloWorld.eins[]'
+			}, {
+				type: 'array',
+				path: '[]'
+			}, {
+				type: 'linear',
+				path: 'zwei'
+			}]);
+		});
 	});
 
 	describe('::root', function(){

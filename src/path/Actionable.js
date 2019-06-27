@@ -80,6 +80,14 @@ class Action{
 		}
 		
 	}
+
+	getList(accessList, action){
+		if (accessList){
+			return this.addChild(accessList, action);
+		} else {
+			return [this];
+		}
+	}
 }
 
 module.exports = {

@@ -75,43 +75,47 @@ class Mapper {
 	}
 
 	go(from, to, ctx = {}){
-		Object.keys(this.mappings).forEach(map => {
+		return Promise.all(Object.keys(this.mappings).map(map => {
 			const mapping = this.mappings[map];
 
-			let res = mapping.reader.get(from);
+			let read = mapping.reader.get(from);
 
-			if (bmoor.isArray(res)){
-				Object.keys(mapping.writers).forEach(writ => {
-					const writing = mapping.writers[writ];
-					const writer = writing.writer;
+			if (bmoor.isArray(read)){
+				return Promise.all(Object.keys(mapping.writers)
+				.map(writ => {
+					const mapper = mapping.writers[writ];
+					const writer = mapper.writer;
 					const action = writer.accessor.access.action;
 
 					let tmp = writer.get(to);
 
-					const next = res.map(f => {
-						const t = (ctx.runAction && action) ? ctx.runAction(action, to) : {};
-
-						writing.child.go(f, t, ctx);
-
-						return t;
-					});
-
-					if (writer.set){
-						if (tmp){
-							writer.set(to, tmp.concat(next));
-						} else {
-							writer.set(to, next);
+					return Promise.all(read.map(incoming => 
+						Promise.resolve(
+							(ctx.runAction && action) ? 
+							ctx.runAction(action, to) : (bmoor.isObject(incoming) ? {} : incoming)
+						).then(outgoing => 
+							Promise.resolve(mapper.child.go(incoming, outgoing, ctx))
+							.then(() => outgoing)
+						)
+					)).then(next => {
+						if (writer.set){
+							if (tmp){
+								return writer.set(to, tmp.concat(next));
+							} else {
+								return writer.set(to, next);
+							}
 						}
-					}
-				});
+					});
+				}));
 			} else {
-				Object.keys(mapping.writers).forEach(writ => {
+				return Promise.all(Object.keys(mapping.writers)
+				.map(writ => {
 					const writing = mapping.writers[writ];
 					
-					writing.writer.set(to, res);
-				});
+					return writing.writer.set(to, read);
+				}));
 			}
-		});
+		}));
 	}
 }
 
