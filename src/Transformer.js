@@ -48,10 +48,17 @@ module.exports = {
 
 						r = child;
 					} else {
-						r.children[chunk.path] = null;
+						r.children[chunk.path] = {
+							properties: null,
+							value: p.sample,
+							children: {}
+						};
 					}
 				} else {
-					r.properties.push(p.path);
+					r.properties.push({
+						path: p.path,
+						value: p.sample
+					});
 				}
 			}
 		});

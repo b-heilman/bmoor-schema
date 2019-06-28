@@ -123,32 +123,44 @@ describe('bmoor-schema.Transformer', function(){
 			});
 
 			expect({
-				'properties': [
-					'person.fname',
-					'person.lname'
-				],
+				'properties': [{
+					path: 'person.fname',
+					value: 'Brian'
+				},{
+					path: 'person.lname',
+					value: 'Halloman'
+				}],
 				'children': {
 					'tools[]': {
-						'properties': [
-							'tools[].name'
-						],
+						'properties': [{
+							path: 'tools[].name',
+							value: 'ok'
+						}],
 						'children': {
 							'sublist[]': {
-								'properties': [
-									'tools[].sublist[].foo'
-								],
+								'properties': [{
+									path: 'tools[].sublist[].foo',
+									value: 'bar'
+								}],
 								'children': {}
 							}
 						}
 					},
 					'properties[]': {
-						'properties': [
-							'properties[].path',
-							'properties[].something'
-						],
+						'properties': [{
+							path: 'properties[].path',
+							value: 'foo.bar'
+						}, {
+							path: 'properties[].something',
+							value: 'orOther'
+						}],
 						'children': {}
 					},
-					'strings[]': null
+					'strings[]': {
+						properties: null,
+						value: 'foo',
+						children: {}
+					}
 				}
 			}).toEqual(t);
 		});
