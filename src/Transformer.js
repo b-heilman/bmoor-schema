@@ -49,8 +49,9 @@ module.exports = {
 						r = child;
 					} else {
 						r.children[chunk.path] = {
-							properties: null,
+							path: p.path,
 							value: p.sample,
+							properties: null,
 							children: {}
 						};
 					}

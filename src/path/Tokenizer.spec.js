@@ -116,6 +116,7 @@ describe('bmoor-schema::Tokenizer', function(){
 
 			expect(tokenized.tokens).toEqual([{
 				type: 'action',
+				params: {},
 				value: 'hello-world',
 				next: 'foo.bar',
 				accessor: null
@@ -139,6 +140,7 @@ describe('bmoor-schema::Tokenizer', function(){
 
 			expect(tokenized.tokens).toEqual([{
 				type: 'action',
+				params: {},
 				value: 'hello-world',
 				next: 'foo.#ok["bar"]',
 				accessor: null
@@ -149,6 +151,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				accessor: 'foo'
 			}, {
 				type: 'action',
+				params: {},
 				value: 'ok',
 				next: '["bar"]',
 				accessor: null
@@ -172,11 +175,13 @@ describe('bmoor-schema::Tokenizer', function(){
 				accessor: 'foo'
 			}, {
 				type: 'action',
+				params: {},
 				value: 'hello',
 				next: '#world.bar',
 				accessor: null
 			}, {
 				type: 'action',
+				params: {},
 				value: 'world',
 				next: 'bar',
 				accessor: null
@@ -195,6 +200,7 @@ describe('bmoor-schema::Tokenizer', function(){
 
 			expect(tokenized.tokens).toEqual([{
 				type: 'action',
+				params: {},
 				value: 'hello-world',
 				next: '[].foo.bar',
 				accessor: null
@@ -216,6 +222,56 @@ describe('bmoor-schema::Tokenizer', function(){
 			}]);
 		});
 
+		describe('::actions', function(){
+			it('should work with a leading value', function(){
+				var tokenized = new Tokenizer(
+					'foo.#bar'
+				);
+
+				expect(tokenized.tokens).toEqual([{
+					type: 'linear',
+					value: 'foo',
+					next: '#bar',
+					accessor: 'foo'
+				}, {
+					type: 'action',
+					params: {},
+					value: 'bar',
+					next: '',
+					accessor: null
+				}]);
+			});
+
+			it('should parse params', function(){
+				var tokenized = new Tokenizer(
+					'#hello-world{"hello":"world"}[].foo.bar'
+				);
+
+				expect(tokenized.tokens).toEqual([{
+					type: 'action',
+					params: {hello:'world'},
+					value: 'hello-world',
+					next: '[].foo.bar',
+					accessor: null
+				}, {
+					type: 'array',
+					value: '[]',
+					next: 'foo.bar',
+					accessor: null
+				}, {
+					type: 'linear',
+					value: 'foo',
+					next: 'bar',
+					accessor: 'foo'
+				}, {
+					type: 'linear',
+					value: 'bar',
+					next: '',
+					accessor: 'bar'
+				}]);
+			});
+		});
+
 		describe('#getAccessList', function(){
 			it('should correctly generate with action and array, action first', function(){
 				var tokenized = new Tokenizer(
@@ -226,6 +282,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				.toEqual([{
 					path: null,
 					action: 'hello-world',
+					params: {},
 					isArray: false
 				}, {
 					path: [],
@@ -251,6 +308,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				}, {
 					path: null,
 					action: 'hello-world',
+					params: {},
 					isArray: false
 				}, {
 					path: ['bar'],
@@ -268,10 +326,12 @@ describe('bmoor-schema::Tokenizer', function(){
 				.toEqual([{
 					path: null,
 					action: 'foo',
+					params: {},
 					isArray: false
 				}, {
 					path: null,
 					action: 'bar',
+					params: {},
 					isArray: false
 				}, {
 					path: ['ok'],
@@ -314,18 +374,41 @@ describe('bmoor-schema::Tokenizer', function(){
 		
 		it('should work with actions', function(){
 			var tokenized = new Tokenizer(
-				'foo.bar#helloWorld.eins[][].zwei'
+				'foo.bar.#helloWorld.eins[][].zwei'
 			);
 
 			expect(tokenized.chunk()).toEqual([{
+				type: 'action',
+				path: 'foo.bar#helloWorld'
+			}, {
 				type: 'array',
-				path: 'foo.bar#helloWorld.eins[]'
+				path: 'eins[]'
 			}, {
 				type: 'array',
 				path: '[]'
 			}, {
 				type: 'linear',
 				path: 'zwei'
+			}]);
+		});
+
+		it('should work with multiple actions', function(){
+			var tokenized = new Tokenizer(
+				'#foo.#bar.#helloWorld.com'
+			);
+
+			expect(tokenized.chunk()).toEqual([{
+				type: 'action',
+				path: 'foo'
+			}, {
+				type: 'action',
+				path: 'bar'
+			}, {
+				type: 'action',
+				path: 'helloWorld'
+			}, {
+				type: 'linear',
+				path: 'com'
 			}]);
 		});
 	});

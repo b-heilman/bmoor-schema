@@ -5,6 +5,27 @@ const Path = require('../Path.js').default;
 const Reader = require('./Reader.js').default;
 const Writer = require('./Writer.js').default;
 
+function transform(reader, writer, ctx, content, parent, isLeaf){
+	const readAction = reader.accessor.access.action;
+	const writeAction = writer.accessor.access.action;
+
+	return Promise.resolve(
+		(readAction && ctx.readAction) ? ctx.readAction(
+			readAction, parent, content,
+			reader.accessor.access.params
+		) : content
+	).then(
+		incoming => (ctx.writeAction && writeAction) ? 
+		ctx.writeAction(
+			writeAction, parent, incoming,
+			writer.accessor.access.params
+			// if the value is a leaf or scalar, just use that value
+		) : ( isLeaf || !bmoor.isObject(incoming) ? incoming : 
+			(ctx.makeNew ? ctx.makeNew(parent) : {})
+		)
+	);
+}
+
 class Mapper {
 	constructor(pairings = []){
 		this.mappings = {};
@@ -77,6 +98,7 @@ class Mapper {
 	go(from, to, ctx = {}){
 		return Promise.all(Object.keys(this.mappings).map(map => {
 			const mapping = this.mappings[map];
+			const reader = mapping.reader;
 
 			let read = mapping.reader.get(from);
 
@@ -85,19 +107,16 @@ class Mapper {
 				.map(writ => {
 					const mapper = mapping.writers[writ];
 					const writer = mapper.writer;
-					const action = writer.accessor.access.action;
-
-					let tmp = writer.get(to);
 
 					return Promise.all(read.map(incoming => 
-						Promise.resolve(
-							(ctx.runAction && action) ? 
-							ctx.runAction(action, to) : (bmoor.isObject(incoming) ? {} : incoming)
-						).then(outgoing => 
-							Promise.resolve(mapper.child.go(incoming, outgoing, ctx))
+						transform(reader, writer, ctx, incoming, to, !Object.keys(mapper.child).length)
+						.then(outgoing => 
+							mapper.child.go(incoming, outgoing, ctx)
 							.then(() => outgoing)
 						)
 					)).then(next => {
+						const tmp = writer.get(to);
+
 						if (writer.set){
 							if (tmp){
 								return writer.set(to, tmp.concat(next));
@@ -110,9 +129,11 @@ class Mapper {
 			} else {
 				return Promise.all(Object.keys(mapping.writers)
 				.map(writ => {
-					const writing = mapping.writers[writ];
-					
-					return writing.writer.set(to, read);
+					const mapper = mapping.writers[writ];
+					const writer = mapper.writer;
+					// console.log('writer', writer);
+					return transform(reader, writer, ctx, read, to, true)
+					.then(outgoing => writer.set(to, outgoing));
 				}));
 			}
 		}));

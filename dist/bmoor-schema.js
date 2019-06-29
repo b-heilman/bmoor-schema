@@ -1183,12 +1183,27 @@ function nextToken(path) {
 		path = path.substring(1);
 
 		var next = path.search(/[\.\[#]/);
-		var action = path.substring(0, next);
+		var action = null;
 
-		next = path.substring(next + (path.charAt(next) === '.' ? 1 : 0));
+		if (next === -1) {
+			action = path;
+			next = '';
+		} else {
+			action = path.substring(0, next);
+			next = path.substring(next + (path.charAt(next) === '.' ? 1 : 0));
+		}
+
+		var params = {};
+
+		var pos = action.indexOf('{');
+		if (pos !== -1) {
+			params = JSON.parse(action.substring(pos));
+			action = action.substring(0, pos);
+		}
 
 		return {
 			type: 'action',
+			params: params,
 			next: next,
 			value: action,
 			accessor: null
@@ -1329,6 +1344,7 @@ var Tokenizer = function () {
 						rtn.push({
 							path: path,
 							action: token.value,
+							params: token.params,
 							isArray: false
 						});
 
@@ -1379,14 +1395,18 @@ var Tokenizer = function () {
 				rtn = [];
 
 				for (var i = 0, c = this.tokens.length; i < c; i++) {
+					var join = '.';
+
 					token = this.tokens[i];
 
+					if (token.value.charAt(0) === '[') {
+						join = '';
+					} else if (token.type === 'action') {
+						join = '#';
+					}
+
 					if (cur) {
-						if (token.value.charAt(0) === '[') {
-							cur += token.value;
-						} else {
-							cur += '.' + token.value;
-						}
+						cur += join + token.value;
 					} else {
 						cur = token.value;
 					}

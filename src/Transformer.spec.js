@@ -7,7 +7,7 @@ describe('bmoor-schema.Transformer', function(){
 		expect( Transformer ).toBeDefined();
 	});
 
-	it('should instantiate correctly with an array', function(){
+	it('should instantiate correctly with an array', function(done){
 		const transformer = new Transformer([
 			{ 
 				from: 'bar',
@@ -23,13 +23,16 @@ describe('bmoor-schema.Transformer', function(){
 			zwei: 2
 		};
 
-		transformer.go(from, to);
+		transformer.go(from, to)
+		.then(() => {
+			expect( to.foo ).toBe( 1 );
+			expect( to.eins ).toBe( 2 );
 
-		expect( to.foo ).toBe( 1 );
-		expect( to.eins ).toBe( 2 );
+			done();
+		});
 	});
 
-	it('should run correctly with delayed routes', function(){
+	it('should run correctly with delayed routes', function(done){
 		var transformer = new Transformer(),
 			to = {},
 			from = {
@@ -40,14 +43,17 @@ describe('bmoor-schema.Transformer', function(){
 		transformer.addMapping('bar', 'foo');
 		transformer.addMapping('zwei', 'eins');
 
-		transformer.go(from, to);
+		transformer.go(from, to)
+		.then(() => {
+			expect( to.foo ).toBe( 1 );
+			expect( to.eins ).toBe( 2 );
 
-		expect( to.foo ).toBe( 1 );
-		expect( to.eins ).toBe( 2 );
+			done();
+		});
 	});
 
 	describe('multi tiered routes', function(){
-		it('should work on the from', function(){
+		it('should work on the from', function(done){
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -59,13 +65,17 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.addMapping('foo.bar',  'eins');
 			transformer.addMapping('foo.hello', 'zwei');
-			transformer.go(from, to);
-			
-			expect(to.eins).toBe( 1 );
-			expect(to.zwei).toBe( 2 );
+
+			transformer.go(from, to)
+			.then(() => {
+				expect(to.eins).toBe( 1 );
+				expect(to.zwei).toBe( 2 );
+
+				done();
+			});
 		});
 
-		it('should work on the to', function(){
+		it('should work on the to', function(done){
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -75,13 +85,17 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.addMapping('foo', 'foo.eins');
 			transformer.addMapping('bar', 'foo.zwei');
-			transformer.go(from, to);
-			
-			expect(to.foo.eins).toBe( 1 );
-			expect(to.foo.zwei).toBe( 2 );
+
+			transformer.go(from, to)
+			.then(function(){
+				expect(to.foo.eins).toBe( 1 );
+				expect(to.foo.zwei).toBe( 2 );
+
+				done();
+			});
 		});
 
-		it('should copy over objects, not just scalars', function(){
+		it('should copy over objects, not just scalars', function(done){
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -92,10 +106,13 @@ describe('bmoor-schema.Transformer', function(){
 				};
 
 			transformer.addMapping('foo', 'bar');
-			transformer.go(from, to);
-			
-			expect( to.bar.eins ).toBe( 1 );
-			expect( to.bar.zwei ).toBe( 2 );
+			transformer.go(from, to)
+			.then(() => {
+				expect( to.bar.eins ).toBe( 1 );
+				expect( to.bar.zwei ).toBe( 2 );
+
+				done();
+			});
 		});
 	});
 
@@ -157,8 +174,9 @@ describe('bmoor-schema.Transformer', function(){
 						'children': {}
 					},
 					'strings[]': {
-						properties: null,
+						path: 'strings[]',
 						value: 'foo',
+						properties: null,
 						children: {}
 					}
 				}

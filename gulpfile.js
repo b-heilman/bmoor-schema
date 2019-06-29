@@ -77,7 +77,7 @@ var failOnError = function() {
 function test(){
 	return gulp.src( env.jsSrc.map((d) => d.replace('!','')) )
     .pipe( jshint() )
-    .pipe( jshint.reporter(stylish) )
+    .pipe( jshint.reporter(stylish) );
 }
 
 gulp.task('build-lint', function() {
@@ -98,7 +98,7 @@ gulp.task('test-noexit', ['build'], function( done ) {
 	}).start();
 });
 
-gulp.task('test', ['test-noexit'], function( done ) {
+gulp.task('test', ['test-noexit'], function() {
 	process.exit();
 });
 

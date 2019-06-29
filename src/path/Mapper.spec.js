@@ -264,7 +264,7 @@ describe('path/Mapper.js', function(){
 			};
 
 			mapper.go(from, to, {
-				runAction(action, parent){
+				writeAction(action, parent){
 					let cls = classes[action];
 					let rtn = null;
 					
@@ -348,7 +348,7 @@ describe('path/Mapper.js', function(){
 			};
 
 			mapper.go(from, to, {
-				runAction(action, parent){
+				writeAction(action, parent){
 					let cls = classes[action];
 					let rtn = null;
 					
@@ -403,6 +403,96 @@ describe('path/Mapper.js', function(){
 						zwei: 200
 					}]
 				});
+
+				done();
+			});
+		});
+
+		it('should work callbacks', function(done){
+			const mapper = new Mapper([{
+				from: 'hello[].world[]#fk{"table":"t","reference":"r","write":"w"}',
+				to: '#foo.#remote.helloWorld'
+			}, {
+				from: 'hello[].world[]#getParentId',
+				to: '#foo.#remote.id'
+			}]);
+
+			const to = {};
+			const classes = {};
+			const from = {
+				hello: [{
+					world:[
+						'foo',
+						'bar'
+					]
+				}]
+			};
+
+			let readCalled = false;
+			let writeCalled = false;
+			let id = 1;
+
+			mapper.go(from, to, {
+				readAction(action, parent, incoming, params){
+					readCalled = true;
+
+					if (action==='fk'){
+						expect(params).toEqual({table:'t', reference:'r', write:'w'});
+						return Promise.resolve('fetched: '+incoming);
+					} else if (action === 'getParentId'){
+						return parent.$id;
+					}
+				}, 
+				writeAction(action, parent){
+					writeCalled = true;
+
+					let cls = classes[action];
+					let rtn = null;
+					
+					if (!cls){
+						cls = [];
+						classes[action] = cls;
+					}
+
+					rtn = {
+						$id: id++,
+						$parent: parent.$id
+					};
+
+					cls.push(rtn);
+
+					return rtn;
+				},
+				makeNew(parent){
+					return {
+						$id: id++,
+						$parent: parent.$id
+					};
+				}
+			}).then(() => {
+				expect(to).toEqual({});
+				expect(classes).toEqual({
+					'foo': [{
+						$id: 1,
+						$parent: undefined
+					}],
+					'remote': [{
+						$id: 2,
+						$parent: 1,
+						helloWorld: 'fetched: foo',
+						id: 2
+					},{
+						$id: 3,
+						$parent: 1,
+						helloWorld: 'fetched: bar',
+						id: 3
+					}]
+				});
+
+				done();
+			}).catch(function(err){
+				console.log(err.message, err);
+				expect(1).toBe(0);
 
 				done();
 			});

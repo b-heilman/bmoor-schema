@@ -9,13 +9,28 @@ function nextToken(path){
 		path = path.substring(1);
 
 		let next = path.search(/[\.\[#]/);
-		let action = path.substring(0, next);
+		let action = null;
 
-		next = path.substring(next+(path.charAt(next) === '.' ? 1 : 0));
+		if (next === -1){
+			action = path;
+			next = '';
+		} else {
+			action = path.substring(0, next);
+			next = path.substring(next+(path.charAt(next) === '.' ? 1 : 0));
+		}
+
+		let params = {};
+
+		let pos = action.indexOf('{');
+		if (pos !== -1){
+			params = JSON.parse(action.substring(pos));
+			action = action.substring(0, pos);
+		}
 
 		return {
 			type: 'action',
-			next: next,
+			params,
+			next,
 			value: action,
 			accessor: null
 		};
@@ -149,6 +164,7 @@ class Tokenizer{
 					rtn.push({
 						path,
 						action: token.value,
+						params: token.params,
 						isArray: false
 					});
 
@@ -198,14 +214,18 @@ class Tokenizer{
 			rtn = [];
 
 			for (let i = 0, c = this.tokens.length; i < c; i++){
+				let join = '.';
+
 				token = this.tokens[i];
 
+				if ( token.value.charAt(0) === '[' ){
+					join = '';
+				}else if (token.type === 'action'){
+					join = '#';
+				}
+
 				if (cur){
-					if ( token.value.charAt(0) === '[' ){
-						cur += token.value;
-					}else{
-						cur += '.'+token.value;
-					}
+					cur += join+token.value;
 				}else{
 					cur = token.value;
 				}
