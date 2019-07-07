@@ -5,8 +5,8 @@ const {'default': Writer, listFactory: writerFactory} = require('./Writer.js');
 const Mapper = require('./Mapper.js').default;
 
 describe('path/Mapper.js', function(){
-	describe('simple copy', function(){
-		it('should #go correctly via #addPath', function(){
+	describe('#go', function(){
+		it('should work correctly via #addPath', function(){
 			let mapper = new Mapper();
 			let fromPath = new Path('foo.bar');
 			let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
@@ -35,7 +35,7 @@ describe('path/Mapper.js', function(){
 			});
 		});
 
-		it('should #go correctly via #factory', function(done){
+		it('should work correctly via #factory', function(done){
 			let mapper = new Mapper();
 
 			mapper.addPairing(
@@ -61,30 +61,487 @@ describe('path/Mapper.js', function(){
 				done();
 			});
 		});
+
+		describe('with array', function(){
+			it('should work correctly', function(done){
+				let mapper = new Mapper();
+				let fromPath = new Path('foo[].bar');
+				let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
+				let toPath = new Path('hello[].world');
+				let writer = new Writer(toPath.tokenizer.getAccessList().getFront());
+
+				mapper.addPairing(
+					reader.addPath('foo[].bar'),
+					writer.addPath('hello[].world')
+				);
+
+				const from = {
+					foo: [{
+						bar: '123'
+					}]
+				};
+				const to = {};
+
+				mapper.go(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: [{
+							world: '123'
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly in multiples', function(done){
+				let mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('foo[].bar'),
+					writerFactory('hello[].world')
+				);
+				
+				const from = {
+					foo: [{
+						bar: '123'
+					},{
+						bar: '456'
+					}]
+				};
+				const to = {};
+
+				mapper.go(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: [{
+							world: '123'
+						}, {
+							world: '456'
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly flat arrays', function(done){
+				let mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('foo.bar[]'),
+					writerFactory('hello.world[]')
+				);
+				
+				const from = {
+					foo: {
+						bar: [
+							'123',
+							'456'
+						]
+					}
+				};
+				const to = {};
+
+				mapper.go(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: {
+							world: [
+								'123',
+								'456'
+							]
+						}
+					});
+
+					done();
+				});
+			});
+		});
+
+		describe('multi array', function(){
+			it('should work correctly', function(done){
+				const mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
+
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						}]
+					}]
+				};
+				const to = {};
+
+				mapper.go(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						zwei: [{
+							hello: [{
+								world: {
+									value: '123'
+								}
+							}]
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly in multiples', function(done){
+				const mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
+
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						},{
+							bar: '456'
+						}]
+					}]
+				};
+				const to = {};
+
+				mapper.go(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						zwei: [{
+							hello: [{
+								world: {
+									value: '123'
+								}
+							}, {
+								world: {
+									value: '456'
+								}
+							}]
+						}]
+					});
+
+					done();
+				});
+			});
+		});
 	});
 
-	describe('array copy', function(){
-		it('should #go correctly', function(done){
+	describe('#delay', function(){
+		it('should work correctly via #addPath', function(){
 			let mapper = new Mapper();
-			let fromPath = new Path('foo[].bar');
+			let fromPath = new Path('foo.bar');
 			let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
-			let toPath = new Path('hello[].world');
+			let toPath = new Path('hello.world');
 			let writer = new Writer(toPath.tokenizer.getAccessList().getFront());
 
 			mapper.addPairing(
-				reader.addPath('foo[].bar'),
-				writer.addPath('hello[].world')
+				reader.addPath('foo.bar'),
+				writer.addPath('hello.world')
 			);
 
 			const from = {
-				foo: [{
+				foo: {
 					bar: '123'
-				}]
+				}
 			};
 			const to = {};
 
-			mapper.go(from, to)
+			mapper.delay(from, to)
 			.then(() => {
+				expect(to).toEqual({
+					hello: {
+						world: '123'
+					}
+				});
+			});
+		});
+
+		it('should work correctly via #factory', function(done){
+			let mapper = new Mapper();
+
+			mapper.addPairing(
+				readerFactory('foo.bar'),
+				writerFactory('hello.world')
+			);
+
+			const from = {
+				foo: {
+					bar: '123'
+				}
+			};
+			const to = {};
+
+			mapper.delay(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					hello: {
+						world: '123'
+					}
+				});
+
+				done();
+			});
+		});
+
+		describe('with array', function(){
+			it('should work correctly', function(done){
+				let mapper = new Mapper();
+				let fromPath = new Path('foo[].bar');
+				let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
+				let toPath = new Path('hello[].world');
+				let writer = new Writer(toPath.tokenizer.getAccessList().getFront());
+
+				mapper.addPairing(
+					reader.addPath('foo[].bar'),
+					writer.addPath('hello[].world')
+				);
+
+				const from = {
+					foo: [{
+						bar: '123'
+					}]
+				};
+				const to = {};
+
+				mapper.delay(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: [{
+							world: '123'
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly in multiples', function(done){
+				let mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('foo[].bar'),
+					writerFactory('hello[].world')
+				);
+				
+				const from = {
+					foo: [{
+						bar: '123'
+					},{
+						bar: '456'
+					}]
+				};
+				const to = {};
+
+				mapper.delay(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: [{
+							world: '123'
+						}, {
+							world: '456'
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly flat arrays', function(done){
+				let mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('foo.bar[]'),
+					writerFactory('hello.world[]')
+				);
+				
+				const from = {
+					foo: {
+						bar: [
+							'123',
+							'456'
+						]
+					}
+				};
+				const to = {};
+
+				mapper.delay(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						hello: {
+							world: [
+								'123',
+								'456'
+							]
+						}
+					});
+
+					done();
+				});
+			});
+		});
+
+		describe('multi array', function(){
+			it('should work correctly', function(done){
+				const mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
+
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						}]
+					}]
+				};
+				const to = {};
+
+				mapper.delay(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						zwei: [{
+							hello: [{
+								world: {
+									value: '123'
+								}
+							}]
+						}]
+					});
+
+					done();
+				});
+			});
+
+			it('should work correctly in multiples', function(done){
+				const mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
+
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						},{
+							bar: '456'
+						}]
+					}]
+				};
+				const to = {};
+
+				mapper.delay(from, to)
+				.then(() => {
+					expect(to).toEqual({
+						zwei: [{
+							hello: [{
+								world: {
+									value: '123'
+								}
+							}, {
+								world: {
+									value: '456'
+								}
+							}]
+						}]
+					});
+
+					done();
+				});
+			});
+		});
+	});
+
+	describe('#inline', function(){
+		it('should work correctly via #addPath', function(done){
+			let mapper = new Mapper();
+			let fromPath = new Path('foo.bar');
+			let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
+			let toPath = new Path('hello.world');
+			let writer = new Writer(toPath.tokenizer.getAccessList().getFront());
+
+			mapper.addPairing(
+				reader.addPath('foo.bar'),
+				writer.addPath('hello.world')
+			);
+
+			const from = {
+				foo: {
+					bar: '123'
+				}
+			};
+			const to = {};
+
+			mapper.inline(from, to);
+
+			expect(to).toEqual({
+				hello: {
+					world: '123'
+				}
+			});
+
+			done();
+		});
+
+		it('should work correctly via #factory', function(done){
+			let mapper = new Mapper();
+
+			mapper.addPairing(
+				readerFactory('foo.bar'),
+				writerFactory('hello.world')
+			);
+
+			const from = {
+				foo: {
+					bar: '123'
+				}
+			};
+			const to = {};
+
+			mapper.inline(from, to);
+			
+			expect(to).toEqual({
+				hello: {
+					world: '123'
+				}
+			});
+
+			done();
+		});
+
+		describe('with array', function(){
+			it('should work correctly', function(done){
+				let mapper = new Mapper();
+				let fromPath = new Path('foo[].bar');
+				let reader = new Reader(fromPath.tokenizer.getAccessList().getFront());
+				let toPath = new Path('hello[].world');
+				let writer = new Writer(toPath.tokenizer.getAccessList().getFront());
+
+				mapper.addPairing(
+					reader.addPath('foo[].bar'),
+					writer.addPath('hello[].world')
+				);
+
+				const from = {
+					foo: [{
+						bar: '123'
+					}]
+				};
+				const to = {};
+
+				mapper.inline(from, to);
+				
 				expect(to).toEqual({
 					hello: [{
 						world: '123'
@@ -93,27 +550,26 @@ describe('path/Mapper.js', function(){
 
 				done();
 			});
-		});
 
-		it('should #go correctly in multiples', function(done){
-			let mapper = new Mapper();
+			it('should work correctly in multiples', function(done){
+				let mapper = new Mapper();
 
-			mapper.addPairing(
-				readerFactory('foo[].bar'),
-				writerFactory('hello[].world')
-			);
-			
-			const from = {
-				foo: [{
-					bar: '123'
-				},{
-					bar: '456'
-				}]
-			};
-			const to = {};
+				mapper.addPairing(
+					readerFactory('foo[].bar'),
+					writerFactory('hello[].world')
+				);
+				
+				const from = {
+					foo: [{
+						bar: '123'
+					},{
+						bar: '456'
+					}]
+				};
+				const to = {};
 
-			mapper.go(from, to)
-			.then(() => {
+				mapper.inline(from, to);
+				
 				expect(to).toEqual({
 					hello: [{
 						world: '123'
@@ -124,28 +580,27 @@ describe('path/Mapper.js', function(){
 
 				done();
 			});
-		});
 
-		it('should #go correctly flat arrays', function(done){
-			let mapper = new Mapper();
+			it('should work correctly flat arrays', function(done){
+				let mapper = new Mapper();
 
-			mapper.addPairing(
-				readerFactory('foo.bar[]'),
-				writerFactory('hello.world[]')
-			);
-			
-			const from = {
-				foo: {
-					bar: [
-						'123',
-						'456'
-					]
-				}
-			};
-			const to = {};
+				mapper.addPairing(
+					readerFactory('foo.bar[]'),
+					writerFactory('hello.world[]')
+				);
+				
+				const from = {
+					foo: {
+						bar: [
+							'123',
+							'456'
+						]
+					}
+				};
+				const to = {};
 
-			mapper.go(from, to)
-			.then(() => {
+				mapper.inline(from, to);
+				
 				expect(to).toEqual({
 					hello: {
 						world: [
@@ -158,28 +613,27 @@ describe('path/Mapper.js', function(){
 				done();
 			});
 		});
-	});
 
-	describe('multi array', function(){
-		it('should #go correctly', function(done){
-			const mapper = new Mapper();
+		describe('multi array', function(){
+			it('should work correctly', function(done){
+				const mapper = new Mapper();
 
-			mapper.addPairing(
-				readerFactory('eins[].foo[].bar'),
-				writerFactory('zwei[].hello[].world.value')
-			);
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
 
-			const from = {
-				eins: [{
-					foo: [{
-						bar: '123'
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						}]
 					}]
-				}]
-			};
-			const to = {};
+				};
+				const to = {};
 
-			mapper.go(from, to)
-			.then(() => {
+				mapper.inline(from, to);
+				
 				expect(to).toEqual({
 					zwei: [{
 						hello: [{
@@ -192,29 +646,28 @@ describe('path/Mapper.js', function(){
 
 				done();
 			});
-		});
 
-		it('should #go correctly in multiples', function(done){
-			const mapper = new Mapper();
+			it('should work correctly in multiples', function(done){
+				const mapper = new Mapper();
 
-			mapper.addPairing(
-				readerFactory('eins[].foo[].bar'),
-				writerFactory('zwei[].hello[].world.value')
-			);
+				mapper.addPairing(
+					readerFactory('eins[].foo[].bar'),
+					writerFactory('zwei[].hello[].world.value')
+				);
 
-			const from = {
-				eins: [{
-					foo: [{
-						bar: '123'
-					},{
-						bar: '456'
+				const from = {
+					eins: [{
+						foo: [{
+							bar: '123'
+						},{
+							bar: '456'
+						}]
 					}]
-				}]
-			};
-			const to = {};
+				};
+				const to = {};
 
-			mapper.go(from, to)
-			.then(() => {
+				mapper.inline(from, to);
+				
 				expect(to).toEqual({
 					zwei: [{
 						hello: [{

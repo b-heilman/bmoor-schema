@@ -15,6 +15,7 @@ class Action{
 		}
 
 		this.get = makeGetter(accessor.access.path);
+		this.hasAction = !!accessor.access.action;
 		this.action = null;
 		this.accessor = accessor;
 		this.children = {};

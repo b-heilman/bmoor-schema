@@ -13,7 +13,8 @@ class Transformer {
 	}
 
 	go(from, to, ops){
-		return this.mapper.go(from, to, ops);
+		return this.mapper.go(from, to, ops)
+		.then(() => to);
 	}
 }
 

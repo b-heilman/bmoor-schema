@@ -5,18 +5,35 @@ const Writer = require('./path/Writer.js').default;
 
 const characterSet = '#$?<>()"\'\\ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-function generateString(cfg){
-	const length = cfg.string || 
-		(Math.floor(Math.random() * (cfg.stringLength || 10)) + (cfg.stringMin || 4));
+function getRandomValue(min, max){
+	const length = max - min;
+	return Math.floor(Math.random() * length) + min;
+}
 
+function generateString(cfg){
+	const min = cfg.stringMin || 4;
+	const max = cfg.stringMax || cfg.stringLength ? 
+		cfg.stringLength - cfg.stringMin : 10;
+	
 	let rtn = '';
+	const length = max - min;
 	for (let i = 0; i < length; i++ ) {
-  		rtn += characterSet.charAt(
-  			Math.floor(Math.random() * characterSet.length)
-  		);
+  		rtn += characterSet.charAt(getRandomValue(0, characterSet.length));
 	}
 
 	return rtn;
+}
+
+function configure(cfg = {}, min = 1, max = 10){
+	if (!('min' in cfg)){
+		cfg.min = min;
+	}
+
+	if (!('max' in cfg)){
+		cfg.max = max;
+	}
+
+	return cfg;
 }
 
 const generators = {
@@ -30,8 +47,11 @@ const generators = {
 		random: function(cfg = {}){
 			return function(){
 				const rtn = [];
-				const length = cfg.sentence || 
-					(Math.floor(Math.random() * (cfg.sentenceLength || 10)) + (cfg.sentenceMin || 1));
+
+				const length = cfg.sentence || getRandomValue(
+					cfg.sentenceMin || 1,
+					cfg.sentenceMax || cfg.sentenceLength ? cfg.sentenceLength - cfg.sentenceMin : 10
+				);
 
 				for (let i = 0; i < length; i++){
 					rtn.push(generateString(cfg));
@@ -49,22 +69,10 @@ const generators = {
 			};
 		},
 		random: function(cfg){
-			if (!cfg) {
-				cfg = {};
-			}
-
-			if (!cfg.min){
-				cfg.min = 1;
-			}
-
-			if (!cfg.max){
-				cfg.max = 100;
-			}
+			cfg = configure(cfg, 1, 100);
 
 			return function(){
-				let val = Math.random() * (cfg.max - cfg.min);
-
-				return val + cfg.min;
+				return getRandomValue(cfg.min, cfg.max);
 			};
 		}
 	},
@@ -76,12 +84,10 @@ const generators = {
 		}
 	},
 	array: function(cfg){
-		return function(){
-			let count = cfg.length || 1;
+		cfg = configure(cfg, 1, 100);
 
-			if (count < 1){
-				count = 1;
-			}
+		return function(){
+			let count = cfg.length || getRandomValue(cfg.min, cfg.max);
 
 			let rtn = [];
 

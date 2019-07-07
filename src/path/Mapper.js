@@ -5,6 +5,11 @@ const Path = require('../Path.js').default;
 const Reader = require('./Reader.js').default;
 const Writer = require('./Writer.js').default;
 
+function manageContent(ctx, incoming, parent, isLeaf){
+	return isLeaf || !bmoor.isObject(incoming) ? incoming : 
+		(ctx.makeNew ? ctx.makeNew(parent) : {});
+}
+
 function transform(reader, writer, ctx, content, parent, isLeaf){
 	const readAction = reader.accessor.access.action;
 	const writeAction = writer.accessor.access.action;
@@ -20,9 +25,7 @@ function transform(reader, writer, ctx, content, parent, isLeaf){
 			writeAction, parent, incoming,
 			writer.accessor.access.params
 			// if the value is a leaf or scalar, just use that value
-		) : ( isLeaf || !bmoor.isObject(incoming) ? incoming : 
-			(ctx.makeNew ? ctx.makeNew(parent) : {})
-		)
+		) : manageContent(ctx, incoming, parent, isLeaf)
 	);
 }
 
@@ -66,6 +69,10 @@ class Mapper {
 		const reader = readerList.shift();
 		const writer = writerList.shift();
 
+		if (reader.hasAction || writer.hasAction){
+			this.hasAction = true;
+		}
+
 		let mapping = this.mappings[reader.accessor.ref];
 
 		if (!mapping){
@@ -84,23 +91,39 @@ class Mapper {
 		if (!writing){
 			writing = {
 				writer,
-				child: new Mapper()
+				child: null 
 			};
 
 			writers[writer.accessor.ref] = writing;
 		}
 
 		if (readerList.length){
-			writing.child.addPairing(readerList, writerList);
+			if (!writing.child){
+				writing.child = new Mapper();
+			}
+
+			if (writing.child.addPairing(readerList, writerList)){
+				this.hasAction = true;
+			}
+		}
+
+		return this.hasAction;
+	}
+
+	go(from, to, ctx){
+		if (this.hasAction){
+			return this.delay(from, to, ctx);
+		} else {
+			return Promise.resolve(this.inline(from, to, ctx));
 		}
 	}
 
-	go(from, to, ctx = {}){
+	delay(from, to, ctx = {}){
 		return Promise.all(Object.keys(this.mappings).map(map => {
 			const mapping = this.mappings[map];
 			const reader = mapping.reader;
 
-			let read = mapping.reader.get(from);
+			let read = reader.get(from);
 
 			if (bmoor.isArray(read)){
 				return Promise.all(Object.keys(mapping.writers)
@@ -109,15 +132,19 @@ class Mapper {
 					const writer = mapper.writer;
 
 					return Promise.all(read.map(incoming => 
-						transform(reader, writer, ctx, incoming, to, !Object.keys(mapper.child).length)
-						.then(outgoing => 
-							mapper.child.go(incoming, outgoing, ctx)
-							.then(() => outgoing)
-						)
+						transform(reader, writer, ctx, incoming, to, !mapper.child)
+						.then(outgoing => {
+							if (mapper.child){
+								return mapper.child.go(incoming, outgoing, ctx)
+								.then(() => outgoing);
+							} else {
+								return outgoing;
+							}
+						})
 					)).then(next => {
-						const tmp = writer.get(to);
-
 						if (writer.set){
+							const tmp = writer.get(to);
+
 							if (tmp){
 								return writer.set(to, tmp.concat(next));
 							} else {
@@ -137,6 +164,60 @@ class Mapper {
 				}));
 			}
 		}));
+	}
+
+	inline(from, to, ctx = {}){
+		return Object.keys(this.mappings)
+		.map(map => {
+			const mapping = this.mappings[map];
+			const reader = mapping.reader;
+
+			let read = reader.get(from);
+
+			if (bmoor.isArray(read)){
+				return Object.keys(mapping.writers)
+				.map(writ => {
+					const mapper = mapping.writers[writ];
+					const writer = mapper.writer;
+
+					const next = read.map(incoming => {
+						const outgoing = manageContent(
+							ctx,
+							incoming,
+							to,
+							!mapper.child
+						);
+
+						if (mapper.child){
+							mapper.child.inline(incoming, outgoing, ctx);
+						}
+
+						return outgoing;
+					});
+
+					if (writer.set){
+						const tmp = writer.get(to);
+
+						if (tmp){
+							return writer.set(to, tmp.concat(next));
+						} else {
+							return writer.set(to, next);
+						}
+					}
+				});
+			} else {
+				return Object.keys(mapping.writers)
+				.map(writ => {
+					const mapper = mapping.writers[writ];
+					const writer = mapper.writer;
+					
+					writer.set(
+						to,
+						manageContent(ctx, read, to, true)
+					);
+				});
+			}
+		});
 	}
 }
 
