@@ -12,7 +12,7 @@ class Transformer {
 		this.mapper.addPairing(from, to);
 	}
 
-	go(from, to, ops){
+	go(from, to = {}, ops = {}){
 		return this.mapper.go(from, to, ops)
 		.then(() => to);
 	}

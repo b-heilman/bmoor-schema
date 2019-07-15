@@ -1,6 +1,6 @@
 {
   "name": "bmoor-schema",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "author": "Brian Heilman <das.ist.junk@gmail.com>",
   "description": "A simple schema pattern for UI interaction",
   "license": "MIT",
@@ -22,6 +22,10 @@
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "fastify": "^2.6.0",
+    "find-my-way": "^2.1.0",
     "gulp": "3.9.1",
     "gulp-jsdoc3": "0.3.0",
     "gulp-jshint": "^2.1.0",
@@ -38,8 +42,10 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^2.0.9",
     "map-stream": "0.0.6",
+    "node-fetch": "^2.6.0",
     "phantomjs-polyfill": "0.0.2",
     "phantomjs-prebuilt": "^2.1.16",
+    "restify": "^8.3.3",
     "webpack": "^3.10.0",
     "webpack-stream": "^4.0.0"
   }

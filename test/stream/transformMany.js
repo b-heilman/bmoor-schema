@@ -44,7 +44,7 @@ var counter = new Stream.Writable({
 });
 
 const cache = [];
-for(let i = 0; i < 10000; i++){
+for(let i = 0; i < 100000; i++){
 	cache.push(generator.generate());
 }
 
