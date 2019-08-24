@@ -116,6 +116,94 @@ describe('bmoor-schema.Transformer', function(){
 		});
 	});
 
+	describe('with arrays', function(){
+		it('should convert an array', function(done){
+			const transformer = new Transformer([
+				{ 
+					from: 'bar[].uno',
+					to: 'foo[].eins'
+				}, { 
+					from: 'bar[].dos',
+					to: 'foo[].zwei'
+				}
+			]);
+			const to = {};
+			const from = {
+				bar: [{
+					uno: 1,
+					dos: 2
+				}]
+			};
+
+			transformer.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					foo: [{
+						eins: 1,
+						zwei: 2
+					}]
+				});
+
+				done();
+			});
+		});
+
+		it('should allow flat to normalized', function(done){
+			const transformer = new Transformer([
+				{ 
+					from: 'bar[]',
+					to: 'foo[].eins.zwei'
+				}
+			]);
+			const to = {};
+			const from = {
+				bar: [1, 2]
+			};
+
+			transformer.go(from, to)
+			.then(res => {
+				const match = {
+					foo: [{
+						eins: {
+							zwei: 1
+						}
+					},{
+						eins: {
+							zwei: 2
+						}
+					}]
+				};
+
+				expect(to).toEqual(match);
+				expect(res).toEqual(match);
+
+				done();
+			});
+		});
+
+		it('should allow flat to flat', function(done){
+			const transformer = new Transformer([
+				{ 
+					from: 'bar[]',
+					to: 'foo[]'
+				}
+			]);
+			const to = {};
+			const from = {
+				bar: [1, 2]
+			};
+
+			transformer.go(from, to)
+			.then(() => {
+				expect(to).toEqual({
+					foo: [1, 2]
+				});
+
+				done();
+			});
+		});
+	});
+
 	describe('::template', function(){
 		it('should work', function(){
 			const t = template({

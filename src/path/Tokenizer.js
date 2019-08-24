@@ -13,7 +13,7 @@ function nextToken(path){
 
 		if (next === -1){
 			action = path;
-			next = '';
+			next = null;
 		} else {
 			action = path.substring(0, next);
 			next = path.substring(next+(path.charAt(next) === '.' ? 1 : 0));
@@ -86,7 +86,7 @@ function nextToken(path){
 			i++;
 		}
 
-		let next = path.substring(i);
+		let next = path.substring(i) || null;
 
 		return {
 			type: isArray ? 'array' : 'linear',
@@ -104,18 +104,28 @@ class Tokenizer{
 		this.begin();
 
 		if (bmoor.isString(path)){
+			let cur = null;
+
 			path = path.trim();
 			tokens = [];
 
-			while( path ){
-				let cur = nextToken(path);
+			while(path){
+				cur = nextToken(path);
+
 				tokens.push(cur);
 				path = cur.next;
+			}
+
+			if (path === null && cur.type === 'array'){
+				tokens.push({
+					type: 'stub',
+					value: null,
+					accessor: null
+				});
 			}
 		}else{
 			tokens = path;
 		}
-
 		
 		this.tokens = tokens;
 	}
@@ -192,7 +202,7 @@ class Tokenizer{
 
 			if (path){
 				rtn.push({
-					path,
+					path: path.length ? path : null,
 					action: false,
 					isArray: false
 				});
@@ -218,24 +228,26 @@ class Tokenizer{
 
 				token = this.tokens[i];
 
-				if ( token.value.charAt(0) === '[' ){
-					join = '';
-				}else if (token.type === 'action'){
-					join = '#';
-				}
+				if (token.type !== 'stub'){
+					if ( token.value.charAt(0) === '[' ){
+						join = '';
+					}else if (token.type === 'action'){
+						join = '#';
+					}
 
-				if (cur){
-					cur += join+token.value;
-				}else{
-					cur = token.value;
-				}
+					if (cur){
+						cur += join+token.value;
+					}else{
+						cur = token.value;
+					}
 
-				if (token.type !== 'linear' ){
-					rtn.push({
-						type: token.type,
-						path: cur
-					});
-					cur = null;
+					if (token.type !== 'linear' ){
+						rtn.push({
+							type: token.type,
+							path: cur
+						});
+						cur = null;
+					}
 				}
 			}
 

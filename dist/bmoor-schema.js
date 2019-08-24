@@ -214,7 +214,18 @@ function parse(path) {
 	if (!path) {
 		return [];
 	} else if (isString(path)) {
-		return path.split('.');
+		// this isn't perfect, I'm making it work with arrays though
+		if (path.indexOf('[') !== -1) {
+			return path.match(/[^\]\[.]+/g).map(function (d) {
+				if (d[0] === '"' || d[0] === '\'') {
+					return d.substring(1, d.length - 1);
+				} else {
+					return d;
+				}
+			});
+		} else {
+			return path.split('.');
+		}
 	} else if (isArray(path)) {
 		return path.slice(0);
 	} else {
@@ -1153,6 +1164,17 @@ var Eventing = function () {
 		value: function hasWaiting(event) {
 			return !!this._listeners[event];
 		}
+	}, {
+		key: 'destroy',
+		value: function destroy() {
+			var _this = this;
+
+			Object.keys(this._listeners).forEach(function (key) {
+				delete _this._listeners[key];
+			});
+
+			this._listeners = null;
+		}
 	}]);
 
 	return Eventing;
@@ -1187,7 +1209,7 @@ function nextToken(path) {
 
 		if (next === -1) {
 			action = path;
-			next = '';
+			next = null;
 		} else {
 			action = path.substring(0, next);
 			next = path.substring(next + (path.charAt(next) === '.' ? 1 : 0));
@@ -1259,7 +1281,7 @@ function nextToken(path) {
 			i++;
 		}
 
-		var _next = path.substring(i);
+		var _next = path.substring(i) || null;
 
 		return {
 			type: isArray ? 'array' : 'linear',
@@ -1279,13 +1301,24 @@ var Tokenizer = function () {
 		this.begin();
 
 		if (bmoor.isString(path)) {
+			var cur = null;
+
 			path = path.trim();
 			tokens = [];
 
 			while (path) {
-				var cur = nextToken(path);
+				cur = nextToken(path);
+
 				tokens.push(cur);
 				path = cur.next;
+			}
+
+			if (path === null && cur.type === 'array') {
+				tokens.push({
+					type: 'stub',
+					value: null,
+					accessor: null
+				});
 			}
 		} else {
 			tokens = path;
@@ -1372,7 +1405,7 @@ var Tokenizer = function () {
 
 				if (path) {
 					rtn.push({
-						path: path,
+						path: path.length ? path : null,
 						action: false,
 						isArray: false
 					});
@@ -1399,24 +1432,26 @@ var Tokenizer = function () {
 
 					token = this.tokens[i];
 
-					if (token.value.charAt(0) === '[') {
-						join = '';
-					} else if (token.type === 'action') {
-						join = '#';
-					}
+					if (token.type !== 'stub') {
+						if (token.value.charAt(0) === '[') {
+							join = '';
+						} else if (token.type === 'action') {
+							join = '#';
+						}
 
-					if (cur) {
-						cur += join + token.value;
-					} else {
-						cur = token.value;
-					}
+						if (cur) {
+							cur += join + token.value;
+						} else {
+							cur = token.value;
+						}
 
-					if (token.type !== 'linear') {
-						rtn.push({
-							type: token.type,
-							path: cur
-						});
-						cur = null;
+						if (token.type !== 'linear') {
+							rtn.push({
+								type: token.type,
+								path: cur
+							});
+							cur = null;
+						}
 					}
 				}
 
@@ -1498,7 +1533,8 @@ var AccessList = function () {
 		_classCallCheck(this, AccessList);
 
 		if (accessors[0] instanceof Accessor) {
-			this.accessors = accessors;
+			// copy it
+			this.accessors = accessors.slice(0);
 		} else {
 			this.accessors = accessors.map(function (access) {
 				return new Accessor(access);
@@ -1533,6 +1569,17 @@ var AccessList = function () {
 			return this.accessors.map(function (accessor) {
 				return accessor.access.path;
 			});
+		}
+
+		// if this access list has a trailing leaf with a null path accessor,
+		//  drop it.
+
+	}, {
+		key: 'trim',
+		value: function trim() {
+			var accessors = this.accessors;
+
+			return new AccessList(accessors.length && !accessors[accessors.length - 1].ref ? accessors.slice(0, -1) : accessors);
 		}
 	}]);
 
@@ -2445,19 +2492,39 @@ function implode(obj, ignore) {
 		ignore = {};
 	}
 
+	var format = bmoor.isArray(obj) ? function (key, next) {
+		if (next) {
+			if (next[0] === '[') {
+				return '[' + key + ']' + next;
+			} else {
+				return '[' + key + '].' + next;
+			}
+		} else {
+			return '[' + key + ']';
+		}
+	} : function (key, next) {
+		if (next) {
+			if (next[0] === '[') {
+				return key + next;
+			} else {
+				return key + '.' + next;
+			}
+		} else {
+			return key;
+		}
+	};
+
 	bmoor.iterate(obj, function (val, key) {
 		var t = ignore[key];
 
-		if (bmoor.isObject(val)) {
-			if (t === false) {
-				rtn[key] = val;
-			} else if (!t || bmoor.isObject(t)) {
+		if (t !== true) {
+			if (bmoor.isObject(val)) {
 				bmoor.iterate(implode(val, t), function (v, k) {
-					rtn[key + '.' + k] = v;
+					rtn[format(key, k)] = v;
 				});
+			} else {
+				rtn[format(key)] = val;
 			}
-		} else if (!t) {
-			rtn[key] = val;
 		}
 	});
 
@@ -2522,15 +2589,16 @@ function copy(to) {
 
 // Deep copy version of extend
 function merge(to) {
-	var from,
-	    i,
-	    c,
-	    m = function m(val, key) {
-		to[key] = merge(to[key], val);
-	};
+	function m(val, key) {
+		if (bmoor.isArray(val)) {
+			to[key] = val;
+		} else {
+			to[key] = merge(to[key], val);
+		}
+	}
 
-	for (i = 1, c = arguments.length; i < c; i++) {
-		from = arguments[i];
+	for (var i = 1, c = arguments.length; i < c; i++) {
+		var from = arguments[i];
 
 		if (to === from) {
 			continue;
@@ -2944,6 +3012,8 @@ var master = {};
 
 var Memory = function () {
 	function Memory(name) {
+		var _this = this;
+
 		_classCallCheck(this, Memory);
 
 		var index = {};
@@ -2962,8 +3032,12 @@ var Memory = function () {
 			return !!index[name];
 		};
 
-		this.register = function (name, obj) {
+		this.set = function (name, obj) {
 			index[name] = obj;
+		};
+
+		this.register = function (name, obj) {
+			_this.set(name, obj);
 		};
 
 		this.clear = function (name) {
@@ -2980,19 +3054,19 @@ var Memory = function () {
 	_createClass(Memory, [{
 		key: 'import',
 		value: function _import(json) {
-			var _this = this;
+			var _this2 = this;
 
 			Object.keys(json).forEach(function (key) {
-				_this.register(key, json[key]);
+				_this2.register(key, json[key]);
 			});
 		}
 	}, {
 		key: 'export',
 		value: function _export() {
-			var _this2 = this;
+			var _this3 = this;
 
 			return this.keys().reduce(function (rtn, key) {
-				rtn[key] = _this2.get(key);
+				rtn[key] = _this3.get(key);
 
 				return rtn;
 			}, {});
@@ -3046,12 +3120,22 @@ var _require = __webpack_require__(4),
 var Observable = function (_Eventing) {
 	_inherits(Observable, _Eventing);
 
-	function Observable() {
-		var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	function Observable(actionFn) {
+		var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 		_classCallCheck(this, Observable);
 
+		console.warn('bmoor::Observable is being depricated for RXJS::Observable');
+
 		var _this = _possibleConstructorReturn(this, (Observable.__proto__ || Object.getPrototypeOf(Observable)).call(this));
+
+		if (core.isFunction(actionFn)) {
+			_this.action = function () {
+				actionFn(_this);
+			};
+		} else if (actionFn) {
+			settings = actionFn;
+		}
 
 		_this.settings = settings;
 
@@ -3101,43 +3185,47 @@ var Observable = function (_Eventing) {
 
 			var disconnect = _get(Observable.prototype.__proto__ || Object.getPrototypeOf(Observable.prototype), 'subscribe', this).call(this, config);
 
-			if (this.currentArgs && config.next) {
-				var fn = null;
+			if (this.currentArgs) {
+				if (config.next) {
+					var fn = null;
 
-				// make it act like a hot observable
-				var _args = this.currentArgs;
-				var cb = config.next;
+					// make it act like a hot observable
+					var _args = this.currentArgs;
+					var cb = config.next;
 
-				if (core.isArray(cb)) {
-					if (cb.length) {
-						if (this._next.active()) {
-							fn = cb[0];
+					if (core.isArray(cb)) {
+						if (cb.length) {
+							if (this._next.active()) {
+								fn = cb[0];
 
-							var myArgs = _args;
-							cb[0] = function () {
-								for (var _len2 = arguments.length, params = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-									params[_key2] = arguments[_key2];
-								}
+								var myArgs = _args;
+								cb[0] = function () {
+									for (var _len2 = arguments.length, params = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+										params[_key2] = arguments[_key2];
+									}
 
-								if (equals(params, myArgs)) {
-									// stub it for when next fires
-									// there's a possible race condition with this, that a second value comes in as
-									// the window is active... the second value will get eaten, so the else
-									// blow tries to help there
-								} else {
-									var f = cb.shift();
-									f.apply(undefined, params);
-								}
-							};
-						} else {
-							fn = cb.shift();
+									if (equals(params, myArgs)) {
+										// stub it for when next fires
+										// there's a possible race condition with this, that a second value comes in as
+										// the window is active... the second value will get eaten, so the else
+										// blow tries to help there
+									} else {
+										var f = cb.shift();
+										f.apply(undefined, params);
+									}
+								};
+							} else {
+								fn = cb.shift();
+							}
 						}
+					} else {
+						fn = cb;
 					}
-				} else {
-					fn = cb;
-				}
 
-				fn.apply(undefined, _toConsumableArray(_args));
+					fn.apply(undefined, _toConsumableArray(_args));
+				}
+			} else if (this.action) {
+				this.action();
 			}
 
 			return disconnect;
@@ -3159,17 +3247,21 @@ var Observable = function (_Eventing) {
 						next = _this3.once('next', function (val) {
 							_this3._promise = null;
 
-							error();
+							error(); // clean up sibling
 							resolve(val);
 						});
 
 						error = _this3.once('error', function (ex) {
 							_this3._promise = null;
 
-							next();
+							next(); // clean up sibling
 							reject(ex);
 						});
 					});
+				}
+
+				if (this.action) {
+					this.action();
 				}
 
 				return this._promise;
@@ -3182,6 +3274,8 @@ var Observable = function (_Eventing) {
 	}, {
 		key: 'destroy',
 		value: function destroy() {
+			_get(Observable.prototype.__proto__ || Object.getPrototypeOf(Observable.prototype), 'destroy', this).call(this);
+
 			this.currentArgs = null;
 
 			this.trigger('complete');
@@ -3354,7 +3448,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Accessor = function Accessor(access) {
 	_classCallCheck(this, Accessor);
 
-	this.ref = (access.action ? access.action + '#' : '') + (access.path ? access.path.join('.') : '');
+	if (!access.action && !access.path) {
+		this.ref = null;
+	} else {
+		this.ref = (access.action ? access.action + '#' : '') + (access.path ? access.path.join('.') : '');
+	}
+
 	this.access = access;
 };
 
@@ -3465,7 +3564,6 @@ var generators = {
 
 		return function () {
 			var count = cfg.length || getRandomValue(cfg.min, cfg.max);
-
 			var rtn = [];
 
 			while (count) {
@@ -3484,7 +3582,7 @@ var Generator = function () {
 
 		_classCallCheck(this, Generator);
 
-		this.fields = {};
+		this.writers = {};
 
 		config.forEach(function (cfg) {
 			_this.addField(new Path(cfg.path), cfg.generator, cfg.options);
@@ -3510,17 +3608,17 @@ var Generator = function () {
 				generator = bmoor.get(generators, generator)(options);
 			}
 
-			var accessors = path.tokenizer.getAccessList();
+			var accessors = path.tokenizer.getAccessList().trim();
 
 			var writer = new Writer(accessors.getFront());
 			path = writer.accessor.ref;
 
-			var found = this.fields[path];
+			var found = this.writers[path];
 
 			if (found) {
 				writer = found;
 			} else {
-				this.fields[path] = writer;
+				this.writers[path] = writer;
 			}
 
 			var following = accessors.getFollowing();
@@ -3538,10 +3636,10 @@ var Generator = function () {
 		value: function generate() {
 			var rtn = {};
 
-			for (var f in this.fields) {
-				var field = this.fields[f];
+			for (var f in this.writers) {
+				var writer = this.writers[f];
 
-				field.go(rtn);
+				writer.go(rtn);
 			}
 
 			return rtn;
@@ -3685,8 +3783,14 @@ var Action = function () {
 			accessor = accessor.getFront();
 		}
 
-		this.get = makeGetter(accessor.access.path);
 		this.hasAction = !!accessor.access.action;
+		if (accessor.access.path) {
+			this.get = makeGetter(accessor.access.path);
+			this.stub = false;
+		} else {
+			this.stub = !this.hasAction;
+		}
+
 		this.action = null;
 		this.accessor = accessor;
 		this.children = {};

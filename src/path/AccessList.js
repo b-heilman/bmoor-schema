@@ -4,7 +4,8 @@ const {Accessor} = require('./Accessor.js');
 class AccessList {
 	constructor(accessors){
 		if (accessors[0] instanceof Accessor){
-			this.accessors = accessors;
+			// copy it
+			this.accessors = accessors.slice(0);
 		} else {
 			this.accessors = accessors.map(access => new Accessor(access));
 		}
@@ -28,6 +29,17 @@ class AccessList {
 
 	simplify(){
 		return this.accessors.map(accessor => accessor.access.path);
+	}
+
+	// if this access list has a trailing leaf with a null path accessor,
+	//  drop it.
+	trim(){
+		const accessors = this.accessors;
+
+		return new AccessList(
+			accessors.length && !accessors[accessors.length-1].ref ?
+				accessors.slice(0, -1) : accessors
+		);
 	}
 }
 

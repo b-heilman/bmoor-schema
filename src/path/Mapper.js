@@ -63,7 +63,13 @@ class Mapper {
 		}
 
 		if (readerList.length !== writerList.length){
-			throw new Error(`Can not pair different amount of writer(${writerList.length}) from readers(${readerList.length})`);
+			const err = new Error(`Can not pair different amount of writer(${writerList.length}) from readers(${readerList.length})`);
+			err.context = {
+				reader: readerList,
+				writer: writerList
+			};
+
+			throw err;
 		}
 
 		const reader = readerList.shift();
@@ -123,7 +129,7 @@ class Mapper {
 			const mapping = this.mappings[map];
 			const reader = mapping.reader;
 
-			let read = reader.get(from);
+			let read = reader.get ? reader.get(from) : from;
 
 			if (bmoor.isArray(read)){
 				return Promise.all(Object.keys(mapping.writers)
@@ -158,38 +164,48 @@ class Mapper {
 				.map(writ => {
 					const mapper = mapping.writers[writ];
 					const writer = mapper.writer;
-					// console.log('writer', writer);
+					
 					return transform(reader, writer, ctx, read, to, true)
-					.then(outgoing => writer.set(to, outgoing));
+					.then(outgoing => {
+						writer.set(to, outgoing);
+					});
 				}));
 			}
 		}));
 	}
 
 	inline(from, to, ctx = {}){
-		return Object.keys(this.mappings)
+		let rtn = to;
+
+		Object.keys(this.mappings)
 		.map(map => {
 			const mapping = this.mappings[map];
 			const reader = mapping.reader;
 
-			let read = reader.get(from);
+			let read = reader.get ? reader.get(from) : from;
 
 			if (bmoor.isArray(read)){
 				return Object.keys(mapping.writers)
-				.map(writ => {
-					const mapper = mapping.writers[writ];
+				.map(target => {
+					const mapper = mapping.writers[target];
 					const writer = mapper.writer;
 
 					const next = read.map(incoming => {
-						const outgoing = manageContent(
+						let outgoing = manageContent(
 							ctx,
 							incoming,
 							to,
 							!mapper.child
 						);
 
+						// TODO : how do I detect this child doesn't need to be
+						//   run?  I can get rid of the if 'writer.set' below
 						if (mapper.child){
-							mapper.child.inline(incoming, outgoing, ctx);
+							const override = mapper.child.inline(incoming, outgoing, ctx);
+
+							if (override){
+								outgoing = override;
+							}
 						}
 
 						return outgoing;
@@ -206,18 +222,39 @@ class Mapper {
 					}
 				});
 			} else {
-				return Object.keys(mapping.writers)
-				.map(writ => {
+				let keys = Object.keys(mapping.writers);
+
+				if (keys.length === 1){
+					const writ = keys[0];
 					const mapper = mapping.writers[writ];
 					const writer = mapper.writer;
-					
-					writer.set(
-						to,
-						manageContent(ctx, read, to, true)
-					);
-				});
+
+					const toWrite = manageContent(ctx, read, to, true);
+
+					if (writer.set){
+						if (bmoor.isObject(to)){
+							writer.set(to, toWrite);
+						} else {
+							rtn = {};
+							writer.set(rtn, toWrite);
+						}
+					}
+				} else {
+					keys.map(writ => {
+						const mapper = mapping.writers[writ];
+						const writer = mapper.writer;
+						
+						if (writer.set){
+							const toWrite = manageContent(ctx, read, to, true);
+
+							writer.set(to, toWrite);
+						}
+					});
+				}
 			}
 		});
+
+		return rtn;
 	}
 }
 

@@ -100,6 +100,7 @@ describe('Generator.js', function(){
 		let generated = generator.generate();
 
 		expect(generated.hello.length).toBe(3);
+		
 		expect(generated.hello[0].world1).toBeDefined();
 		expect(generated.hello[0].world2).toBeDefined();
 		expect(generated.hello[1].world1).toBeDefined();

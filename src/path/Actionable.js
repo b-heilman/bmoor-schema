@@ -14,8 +14,14 @@ class Action{
 			accessor = accessor.getFront();
 		}
 
-		this.get = makeGetter(accessor.access.path);
 		this.hasAction = !!accessor.access.action;
+		if (accessor.access.path){
+			this.get = makeGetter(accessor.access.path);
+			this.stub = false;
+		} else {
+			this.stub = !this.hasAction;
+		}
+		
 		this.action = null;
 		this.accessor = accessor;
 		this.children = {};

@@ -88,7 +88,6 @@ const generators = {
 
 		return function(){
 			let count = cfg.length || getRandomValue(cfg.min, cfg.max);
-
 			let rtn = [];
 
 			while(count){
@@ -104,7 +103,7 @@ const generators = {
 class Generator {
 
 	constructor(config){
-		this.fields = {};
+		this.writers = {};
 
 		config.forEach(cfg => {
 			this.addField(
@@ -130,17 +129,17 @@ class Generator {
 			generator = bmoor.get(generators, generator)(options);
 		}
 
-		const accessors = path.tokenizer.getAccessList();
+		const accessors = path.tokenizer.getAccessList().trim();
 		
 		let writer = new Writer(accessors.getFront());
 		path = writer.accessor.ref;
 
-		let found = this.fields[path];
+		let found = this.writers[path];
 
 		if (found) {
 			writer = found;
 		} else {
-			this.fields[path] = writer; 
+			this.writers[path] = writer; 
 		}
 
 		const following = accessors.getFollowing();
@@ -158,10 +157,10 @@ class Generator {
 	generate(){
 		let rtn = {};
 
-		for(let f in this.fields){
-			let field = this.fields[f];
+		for(let f in this.writers){
+			let writer = this.writers[f];
 
-			field.go(rtn);
+			writer.go(rtn);
 		}
 
 		return rtn;

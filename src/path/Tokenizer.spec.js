@@ -20,7 +20,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: 'com',
-				next: '',
+				next: null,
 				accessor: 'com'
 			}]);
 		});
@@ -43,7 +43,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: '["hello.world"]',
-				next: '',
+				next: null,
 				accessor: 'hello.world'
 			}]);
 		});
@@ -67,7 +67,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				}, {
 					type: 'linear',
 					value: 'bar',
-					next: '',
+					next: null,
 					accessor: 'bar'
 				}]);
 			});
@@ -85,7 +85,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				}, {
 					type: 'linear',
 					value: 'bar',
-					next: '',
+					next: null,
 					accessor: 'bar'
 				}]);
 			});
@@ -103,8 +103,12 @@ describe('bmoor-schema::Tokenizer', function(){
 				}, {
 					type: 'array',
 					value: 'bar[]',
-					next: '',
+					next: null,
 					accessor: 'bar'
+				}, {
+					type: 'stub',
+					value: null,
+					accessor: null
 				}]);
 			});
 		});
@@ -128,7 +132,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: 'bar',
-				next: '',
+				next: null,
 				accessor: 'bar'
 			}]);
 		});
@@ -158,7 +162,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: '["bar"]',
-				next: '',
+				next: null,
 				accessor: 'bar'
 			}]);
 		});
@@ -188,7 +192,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: 'bar',
-				next: '',
+				next: null,
 				accessor: 'bar'
 			}]);
 		});
@@ -217,7 +221,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			}, {
 				type: 'linear',
 				value: 'bar',
-				next: '',
+				next: null,
 				accessor: 'bar'
 			}]);
 		});
@@ -237,7 +241,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					type: 'action',
 					params: {},
 					value: 'bar',
-					next: '',
+					next: null,
 					accessor: null
 				}]);
 			});
@@ -266,7 +270,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				}, {
 					type: 'linear',
 					value: 'bar',
-					next: '',
+					next: null,
 					accessor: 'bar'
 				}]);
 			});
@@ -339,19 +343,94 @@ describe('bmoor-schema::Tokenizer', function(){
 					isArray: false
 				}]);
 			});
+
+			describe('trailing arrays', function(){
+				it('should correctly work with raw', function(){
+					var tokenized = new Tokenizer(
+						'foo.bar[]'
+					);
+
+					const debug = tokenized.getAccessList().raw();
+					
+					expect(debug)
+					.toEqual([{
+						path: ['foo', 'bar'],
+						action: false,
+						isArray: true
+					}, {
+						path: null,
+						action: false,
+						isArray: false
+					}]);
+				});
+
+				it('should correctly work with trim', function(){
+					var tokenized = new Tokenizer(
+						'foo.bar[]'
+					);
+
+					const debug = tokenized.getAccessList().trim().raw();
+					
+					expect(debug)
+					.toEqual([{
+						path: ['foo', 'bar'],
+						action: false,
+						isArray: true
+					}]);
+				});
+			});
 		});
 	});
 
-	it('::getAccessors', function(){
-		var tokenized = new Tokenizer(
-			'foo.bar["hello.world"].eins[][].zwei'
-		);
+	describe('::getAccessors', function(){
+		it('should return back a simplified list', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
 
-		expect(tokenized.getAccessList().simplify()).toEqual([
-			['foo','bar','hello.world','eins'],
-			[],
-			['zwei']
-		]);
+			expect(tokenized.getAccessList().simplify())
+			.toEqual([
+				['foo','bar','hello.world','eins'],
+				[],
+				['zwei']
+			]);
+		});
+		
+		it('should return back a trimmed simplified list', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[][].zwei'
+			);
+
+			expect(tokenized.getAccessList().trim().simplify())
+			.toEqual([
+				['foo','bar','hello.world','eins'],
+				[],
+				['zwei']
+			]);
+		});
+
+		it('should work with trailing arrays', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[]'
+			);
+
+			expect(tokenized.getAccessList().simplify())
+			.toEqual([
+				['foo','bar','hello.world','eins'],
+				null
+			]);
+		});
+
+		it('should work with trimming trailing arrays', function(){
+			var tokenized = new Tokenizer(
+				'foo.bar["hello.world"].eins[]'
+			);
+
+			expect(tokenized.getAccessList().trim().simplify())
+			.toEqual([
+				['foo','bar','hello.world','eins']
+			]);
+		});
 	});
 
 	describe('::chunk', function(){

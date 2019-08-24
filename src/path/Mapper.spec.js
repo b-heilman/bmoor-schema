@@ -612,6 +612,37 @@ describe('path/Mapper.js', function(){
 
 				done();
 			});
+
+			it('should work correctly leaf to object', function(done){
+				let mapper = new Mapper();
+
+				mapper.addPairing(
+					readerFactory('foo.bar[]'),
+					writerFactory('hello[].world')
+				);
+				
+				const from = {
+					foo: {
+						bar: [
+							'123',
+							'456'
+						]
+					}
+				};
+				const to = {};
+
+				mapper.inline(from, to);
+				
+				expect(to).toEqual({
+					hello: [{
+						world: '123'
+					}, {
+						world: '456'
+					}]
+				});
+
+				done();
+			});
 		});
 
 		describe('multi array', function(){
@@ -947,7 +978,7 @@ describe('path/Mapper.js', function(){
 				console.log(err.message, err);
 				expect(1).toBe(0);
 
-				done();
+				done(err);
 			});
 		});
 	});
