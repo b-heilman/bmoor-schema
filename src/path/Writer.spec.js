@@ -1,4 +1,6 @@
 
+const {expect} = require('chai');
+
 const Path = require('../Path.js').default;
 const Writer = require('./Writer.js').default;
 
@@ -17,7 +19,7 @@ describe('path/Writer.js', function(){
 
 			writer.go(target);
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: {
 					bar: 'hello world'
 				}
@@ -47,7 +49,7 @@ describe('path/Writer.js', function(){
 
 			writer.go(target);
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: [{
 					bar1: 'hello world',
 					bar2: 'zwei',
@@ -81,7 +83,7 @@ describe('path/Writer.js', function(){
 
 			writer.go(target);
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: [{
 					bar1: 'eins',
 					bar2: 'zwei',
@@ -117,7 +119,7 @@ describe('path/Writer.js', function(){
 
 			writer.go(target);
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: [{
 					bar1: 'hello world',
 					bar: [{
@@ -151,7 +153,7 @@ describe('path/Writer.js', function(){
 
 			writer.go(target);
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: [{
 					bar1: 'hello world',
 					bar: [{
@@ -204,13 +206,13 @@ describe('path/Writer.js', function(){
 				}
 			});
 
-			expect(target).toEqual({
+			expect(target).to.deep.equal({
 				foo: [{
 					bar1: 'hello world'
 				}]
 			});
 
-			expect(classes).toEqual({
+			expect(classes).to.deep.equal({
 				sub: [{
 					parent: {
 						bar1: 'hello world'

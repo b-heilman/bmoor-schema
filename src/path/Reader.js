@@ -1,6 +1,6 @@
 
 const Path = require('../Path.js').default;
-const Actionable = require('./Actionable.js').default;
+const {Actionable} = require('./Actionable.js');
 
 class Reader extends Actionable {
 }

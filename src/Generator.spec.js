@@ -1,4 +1,6 @@
 
+const {expect} = require('chai');
+
 const Generator = require('./Generator.js').default;
 
 describe('Generator.js', function(){
@@ -30,7 +32,7 @@ describe('Generator.js', function(){
 			}
 		]);
 
-		expect(generator.generate()).toEqual({
+		expect(generator.generate()).to.deep.equal({
 			eins: 'one',
 			foo: {
 				bar: 'fooBar'
@@ -71,11 +73,11 @@ describe('Generator.js', function(){
 
 		let generated = generator.generate();
 
-		expect(generated.eins).toBeDefined();
-		expect(generated.foo.bar).toBeDefined();
-		expect(generated.hello[0].world1).toBeDefined();
-		expect(generated.hello[0].world2).toBeDefined();
-		expect(generated.constant).toBe('constant');
+		expect(generated.eins).to.exist;
+		expect(generated.foo.bar).to.exist;
+		expect(generated.hello[0].world1).to.exist;
+		expect(generated.hello[0].world2).to.exist;
+		expect(generated.constant).to.equal('constant');
 	});
 
 	it('should #generate arrays', function(){
@@ -99,13 +101,13 @@ describe('Generator.js', function(){
 
 		let generated = generator.generate();
 
-		expect(generated.hello.length).toBe(3);
+		expect(generated.hello.length).to.equal(3);
 		
-		expect(generated.hello[0].world1).toBeDefined();
-		expect(generated.hello[0].world2).toBeDefined();
-		expect(generated.hello[1].world1).toBeDefined();
-		expect(generated.hello[1].world2).toBeDefined();
-		expect(generated.hello[2].world1).toBeDefined();
-		expect(generated.hello[2].world2).toBeDefined();
+		expect(generated.hello[0].world1).to.exist;
+		expect(generated.hello[0].world2).to.exist;
+		expect(generated.hello[1].world1).to.exist;
+		expect(generated.hello[1].world2).to.exist;
+		expect(generated.hello[2].world1).to.exist;
+		expect(generated.hello[2].world2).to.exist;
 	});
 });

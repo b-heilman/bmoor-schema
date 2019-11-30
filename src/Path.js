@@ -1,3 +1,4 @@
+
 const bmoor = require('bmoor'),
 	makeGetter = bmoor.makeGetter,
 	Tokenizer = require('./path/Tokenizer.js').default;

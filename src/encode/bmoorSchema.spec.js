@@ -1,3 +1,6 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema.encode.bmoorSchema', function(){
 	var encode = require('./bmoorSchema.js').default;
 
@@ -20,24 +23,24 @@ describe('bmoor-schema.encode.bmoorSchema', function(){
 				]
 			});
 
-		expect( encoding.length ).toBe( 8 );
+		expect( encoding.length ).to.equal( 8 );
 
 		expect( encoding[0].path )
-			.toBe('foo');
+			.to.equal('foo');
 		expect( encoding[1].path )
-			.toBe('arr[].first');
+			.to.equal('arr[].first');
 		expect( encoding[2].path )
-			.toBe('obj.foo');
+			.to.equal('obj.foo');
 		expect( encoding[3].path )
-			.toBe('obj["hello-world"]');
+			.to.equal('obj["hello-world"]');
 		expect( encoding[4].path )
-			.toBe('obj["boop doop"]');
+			.to.equal('obj["boop doop"]');
 		expect( encoding[5].path )
-			.toBe('obj["eins.zwei"]');
+			.to.equal('obj["eins.zwei"]');
 		expect( encoding[6].path )
-			.toBe('obj.well_ok');
+			.to.equal('obj.well_ok');
 		expect( encoding[7].path )
-			.toBe('multi[][]');
+			.to.equal('multi[][]');
 	});
 
 	it('should allow escaping override', function(){
@@ -59,24 +62,24 @@ describe('bmoor-schema.encode.bmoorSchema', function(){
 				]
 			},/\./);
 
-		expect( encoding.length ).toBe( 8 );
+		expect( encoding.length ).to.equal( 8 );
 
 		expect( encoding[0].path )
-			.toBe('foo');
+			.to.equal('foo');
 		expect( encoding[1].path )
-			.toBe('arr[].first');
+			.to.equal('arr[].first');
 		expect( encoding[2].path )
-			.toBe('obj.foo');
+			.to.equal('obj.foo');
 		expect( encoding[3].path )
-			.toBe('obj.hello-world');
+			.to.equal('obj.hello-world');
 		expect( encoding[4].path )
-			.toBe('obj.boop doop');
+			.to.equal('obj.boop doop');
 		expect( encoding[5].path )
-			.toBe('obj["eins.zwei"]');
+			.to.equal('obj["eins.zwei"]');
 		expect( encoding[6].path )
-			.toBe('obj.well_ok');
+			.to.equal('obj.well_ok');
 		expect( encoding[7].path )
-			.toBe('multi[][]');
+			.to.equal('multi[][]');
 	});
 
 	it('should ignore null and undefined values', function() {
@@ -86,8 +89,8 @@ describe('bmoor-schema.encode.bmoorSchema', function(){
 			undefinedObj: undefined
 		});
 
-		expect(encoding.length).toBe(1);
-		expect(encoding).toEqual([{
+		expect(encoding.length).to.equal(1);
+		expect(encoding).to.deep.equal([{
 			path: 'foo',
 			type: 'string',
 			sample: 'bar'

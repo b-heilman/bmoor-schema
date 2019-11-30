@@ -1,6 +1,9 @@
-var Path = require('./Path.js').default;
 
-var tests = [
+const Path = require('./Path.js').default;
+const {Config} = require('bmoor/src/lib/config.js');
+
+const config = new Config({
+	tests: [
 		function( def, v, errors ){
 			if (typeof(v) !== def.type && (def.required || v !== undefined)){
 				errors.push({
@@ -11,7 +14,8 @@ var tests = [
 				});
 			}
 		}
-	];
+	]
+});
 
 function validate( schema, obj ){
 	var errors = [];
@@ -28,7 +32,7 @@ function validate( schema, obj ){
 			});
 		} else if (arr.length) {
 			arr.forEach(function( v ){
-				tests.forEach(function( fn ){
+				config.get('tests').forEach(function( fn ){
 					fn( def, v, errors );
 				});
 			});
@@ -42,9 +46,8 @@ function validate( schema, obj ){
 	}
 }
 
-validate.$ops = tests;
-
 module.exports = {
-	default: validate,
-	tests: tests
+	config,
+	validate,
+	default: validate
 };

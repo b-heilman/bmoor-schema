@@ -1,3 +1,6 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema::schema', function(){
 	var bmoorSchema = require('../bmoor-schema.js'),
 		encoding = bmoorSchema.encode,
@@ -11,7 +14,7 @@ describe('bmoor-schema::schema', function(){
 				drei: 'hello'
 			});
 
-		expect( info ).toEqual([
+		expect( info ).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -29,7 +32,7 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).toEqual({
+		expect( translate(info) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required:[],
@@ -51,7 +54,7 @@ describe('bmoor-schema::schema', function(){
 
 		info[2].path = 'drei';
 
-		expect( translate(info) ).toEqual({
+		expect( translate(info) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required:[],
@@ -84,7 +87,7 @@ describe('bmoor-schema::schema', function(){
 				}
 			});
 
-		expect( info ).toEqual([
+		expect( info ).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -102,7 +105,7 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).toEqual({
+		expect( translate(info) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],
@@ -135,7 +138,7 @@ describe('bmoor-schema::schema', function(){
 				}]
 			});
 
-		expect( info ).toEqual([
+		expect( info ).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -153,7 +156,7 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).toEqual({
+		expect( translate(info) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],

@@ -1,4 +1,6 @@
 
+const {expect} = require('chai');
+
 const Path = require('../Path.js').default;
 const {'default': Reader, listFactory: readerFactory}  = require('./Reader.js');
 const {'default': Writer, listFactory: writerFactory} = require('./Writer.js');
@@ -27,7 +29,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.go(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: {
 						world: '123'
 					}
@@ -52,7 +54,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.go(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: {
 						world: '123'
 					}
@@ -84,7 +86,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.go(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: [{
 							world: '123'
 						}]
@@ -113,7 +115,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.go(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: [{
 							world: '123'
 						}, {
@@ -145,7 +147,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.go(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: {
 							world: [
 								'123',
@@ -179,7 +181,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.go(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						zwei: [{
 							hello: [{
 								world: {
@@ -214,7 +216,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.go(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						zwei: [{
 							hello: [{
 								world: {
@@ -256,7 +258,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.delay(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: {
 						world: '123'
 					}
@@ -281,7 +283,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.delay(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: {
 						world: '123'
 					}
@@ -313,7 +315,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.delay(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: [{
 							world: '123'
 						}]
@@ -342,7 +344,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.delay(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: [{
 							world: '123'
 						}, {
@@ -374,7 +376,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.delay(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						hello: {
 							world: [
 								'123',
@@ -408,7 +410,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.delay(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						zwei: [{
 							hello: [{
 								world: {
@@ -443,7 +445,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.delay(from, to)
 				.then(() => {
-					expect(to).toEqual({
+					expect(to).to.deep.equal({
 						zwei: [{
 							hello: [{
 								world: {
@@ -485,7 +487,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.inline(from, to);
 
-			expect(to).toEqual({
+			expect(to).to.deep.equal({
 				hello: {
 					world: '123'
 				}
@@ -511,7 +513,7 @@ describe('path/Mapper.js', function(){
 
 			mapper.inline(from, to);
 			
-			expect(to).toEqual({
+			expect(to).to.deep.equal({
 				hello: {
 					world: '123'
 				}
@@ -542,7 +544,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: [{
 						world: '123'
 					}]
@@ -570,7 +572,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: [{
 						world: '123'
 					}, {
@@ -601,7 +603,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: {
 						world: [
 							'123',
@@ -633,7 +635,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					hello: [{
 						world: '123'
 					}, {
@@ -665,7 +667,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					zwei: [{
 						hello: [{
 							world: {
@@ -699,7 +701,7 @@ describe('path/Mapper.js', function(){
 
 				mapper.inline(from, to);
 				
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					zwei: [{
 						hello: [{
 							world: {
@@ -767,12 +769,12 @@ describe('path/Mapper.js', function(){
 				}
 			})
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					eins: 1,
 					zwei: 2
 				});
 
-				expect(classes).toEqual({
+				expect(classes).to.deep.equal({
 					foo: [{
 						parent: {
 							eins: 1,
@@ -851,12 +853,12 @@ describe('path/Mapper.js', function(){
 				}
 			})
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					eins: 1,
 					zwei: 2
 				});
 
-				expect(classes).toEqual({
+				expect(classes).to.deep.equal({
 					root: [{
 						parent: {
 							eins: 1,
@@ -921,7 +923,7 @@ describe('path/Mapper.js', function(){
 					readCalled = true;
 
 					if (action==='fk'){
-						expect(params).toEqual({table:'t', reference:'r', write:'w'});
+						expect(params).to.deep.equal({table:'t', reference:'r', write:'w'});
 						return Promise.resolve('fetched: '+incoming);
 					} else if (action === 'getParentId'){
 						return parent.$id;
@@ -954,8 +956,8 @@ describe('path/Mapper.js', function(){
 					};
 				}
 			}).then(() => {
-				expect(to).toEqual({});
-				expect(classes).toEqual({
+				expect(to).to.deep.equal({});
+				expect(classes).to.deep.equal({
 					'foo': [{
 						$id: 1,
 						$parent: undefined
@@ -976,7 +978,7 @@ describe('path/Mapper.js', function(){
 				done();
 			}).catch(function(err){
 				console.log(err.message, err);
-				expect(1).toBe(0);
+				expect(1).to.equal(0);
 
 				done(err);
 			});
