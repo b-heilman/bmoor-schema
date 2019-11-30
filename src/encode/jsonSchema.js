@@ -143,5 +143,6 @@ function encode(fields, shift, extra) {
 }
 
 module.exports = {
+	encode,
 	default: encode
 };

@@ -1,3 +1,6 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema::Tokenizer', function(){
 	var Tokenizer = require('./Tokenizer.js').default;
 
@@ -7,7 +10,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'foo.bar.com'
 			);
 
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'linear',
 				value: 'foo',
 				next: 'bar.com',
@@ -30,7 +33,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'foo.bar["hello.world"]'
 			);
 			
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'linear',
 				value: 'foo',
 				next: 'bar["hello.world"]',
@@ -54,7 +57,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					'[].foo.bar'
 				);
 
-				expect(tokenized.tokens).toEqual([{
+				expect(tokenized.tokens).to.deep.equal([{
 					type: 'array',
 					value: '[]',
 					next: 'foo.bar',
@@ -77,7 +80,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					'foo[].bar'
 				);
 
-				expect(tokenized.tokens).toEqual([{
+				expect(tokenized.tokens).to.deep.equal([{
 					type: 'array',
 					value: 'foo[]',
 					next: 'bar',
@@ -95,7 +98,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					'foo.bar[]'
 				);
 
-				expect(tokenized.tokens).toEqual([{
+				expect(tokenized.tokens).to.deep.equal([{
 					type: 'linear',
 					value: 'foo',
 					next: 'bar[]',
@@ -118,7 +121,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'#hello-world.foo.bar'
 			);
 
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'action',
 				params: {},
 				value: 'hello-world',
@@ -142,7 +145,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'#hello-world.foo.#ok["bar"]'
 			);
 
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'action',
 				params: {},
 				value: 'hello-world',
@@ -172,7 +175,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'foo.#hello.#world.bar'
 			);
 
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'linear',
 				value: 'foo',
 				next: '#hello.#world.bar',
@@ -202,7 +205,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'#hello-world[].foo.bar'
 			);
 
-			expect(tokenized.tokens).toEqual([{
+			expect(tokenized.tokens).to.deep.equal([{
 				type: 'action',
 				params: {},
 				value: 'hello-world',
@@ -232,7 +235,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					'foo.#bar'
 				);
 
-				expect(tokenized.tokens).toEqual([{
+				expect(tokenized.tokens).to.deep.equal([{
 					type: 'linear',
 					value: 'foo',
 					next: '#bar',
@@ -251,7 +254,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					'#hello-world{"hello":"world"}[].foo.bar'
 				);
 
-				expect(tokenized.tokens).toEqual([{
+				expect(tokenized.tokens).to.deep.equal([{
 					type: 'action',
 					params: {hello:'world'},
 					value: 'hello-world',
@@ -283,7 +286,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				);
 
 				expect(tokenized.getAccessList().raw())
-				.toEqual([{
+				.to.deep.equal([{
 					path: null,
 					action: 'hello-world',
 					params: {},
@@ -305,7 +308,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				);
 
 				expect(tokenized.getAccessList().raw())
-				.toEqual([{
+				.to.deep.equal([{
 					path: ['foo'],
 					action: false,
 					isArray: true
@@ -327,7 +330,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				);
 
 				expect(tokenized.getAccessList().raw())
-				.toEqual([{
+				.to.deep.equal([{
 					path: null,
 					action: 'foo',
 					params: {},
@@ -353,7 +356,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					const debug = tokenized.getAccessList().raw();
 					
 					expect(debug)
-					.toEqual([{
+					.to.deep.equal([{
 						path: ['foo', 'bar'],
 						action: false,
 						isArray: true
@@ -372,7 +375,7 @@ describe('bmoor-schema::Tokenizer', function(){
 					const debug = tokenized.getAccessList().trim().raw();
 					
 					expect(debug)
-					.toEqual([{
+					.to.deep.equal([{
 						path: ['foo', 'bar'],
 						action: false,
 						isArray: true
@@ -389,7 +392,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.getAccessList().simplify())
-			.toEqual([
+			.to.deep.equal([
 				['foo','bar','hello.world','eins'],
 				[],
 				['zwei']
@@ -402,7 +405,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.getAccessList().trim().simplify())
-			.toEqual([
+			.to.deep.equal([
 				['foo','bar','hello.world','eins'],
 				[],
 				['zwei']
@@ -415,7 +418,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.getAccessList().simplify())
-			.toEqual([
+			.to.deep.equal([
 				['foo','bar','hello.world','eins'],
 				null
 			]);
@@ -427,7 +430,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.getAccessList().trim().simplify())
-			.toEqual([
+			.to.deep.equal([
 				['foo','bar','hello.world','eins']
 			]);
 		});
@@ -439,7 +442,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'foo.bar["hello.world"].eins[][].zwei'
 			);
 
-			expect(tokenized.chunk()).toEqual([{
+			expect(tokenized.chunk()).to.deep.equal([{
 				type: 'array',
 				path: 'foo.bar["hello.world"].eins[]'
 			}, {
@@ -456,7 +459,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'foo.bar.#helloWorld.eins[][].zwei'
 			);
 
-			expect(tokenized.chunk()).toEqual([{
+			expect(tokenized.chunk()).to.deep.equal([{
 				type: 'action',
 				path: 'foo.bar#helloWorld'
 			}, {
@@ -476,7 +479,7 @@ describe('bmoor-schema::Tokenizer', function(){
 				'#foo.#bar.#helloWorld.com'
 			);
 
-			expect(tokenized.chunk()).toEqual([{
+			expect(tokenized.chunk()).to.deep.equal([{
 				type: 'action',
 				path: 'foo'
 			}, {
@@ -499,7 +502,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.root(true))
-			.toEqual(['foo','bar','hello.world','eins']);
+			.to.deep.equal(['foo','bar','hello.world','eins']);
 		});
 
 		it('should return back simple text', function(){
@@ -508,7 +511,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.root())
-			.toEqual('foo.bar["hello.world"].eins[]');
+			.to.deep.equal('foo.bar["hello.world"].eins[]');
 		});
 	});
 
@@ -519,7 +522,7 @@ describe('bmoor-schema::Tokenizer', function(){
 			);
 
 			expect(tokenized.remainder().tokens)
-			.toEqual( tokenized.tokens.slice(4) );
+			.to.deep.equal( tokenized.tokens.slice(4) );
 		});
 	});
 });

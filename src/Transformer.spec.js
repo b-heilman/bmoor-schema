@@ -1,10 +1,12 @@
 
+const {expect} = require('chai');
+
 const {Transformer, template} = require('./Transformer.js');
 
 describe('bmoor-schema.Transformer', function(){
 	
 	it('should be defined', function(){
-		expect( Transformer ).toBeDefined();
+		expect( Transformer ).to.exist;
 	});
 
 	it('should instantiate correctly with an array', function(done){
@@ -25,8 +27,8 @@ describe('bmoor-schema.Transformer', function(){
 
 		transformer.go(from, to)
 		.then(() => {
-			expect( to.foo ).toBe( 1 );
-			expect( to.eins ).toBe( 2 );
+			expect( to.foo ).to.equal( 1 );
+			expect( to.eins ).to.equal( 2 );
 
 			done();
 		});
@@ -45,8 +47,8 @@ describe('bmoor-schema.Transformer', function(){
 
 		transformer.go(from, to)
 		.then(() => {
-			expect( to.foo ).toBe( 1 );
-			expect( to.eins ).toBe( 2 );
+			expect( to.foo ).to.equal( 1 );
+			expect( to.eins ).to.equal( 2 );
 
 			done();
 		});
@@ -68,8 +70,8 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.go(from, to)
 			.then(() => {
-				expect(to.eins).toBe( 1 );
-				expect(to.zwei).toBe( 2 );
+				expect(to.eins).to.equal( 1 );
+				expect(to.zwei).to.equal( 2 );
 
 				done();
 			});
@@ -88,8 +90,8 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.go(from, to)
 			.then(function(){
-				expect(to.foo.eins).toBe( 1 );
-				expect(to.foo.zwei).toBe( 2 );
+				expect(to.foo.eins).to.equal( 1 );
+				expect(to.foo.zwei).to.equal( 2 );
 
 				done();
 			});
@@ -108,8 +110,8 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping('foo', 'bar');
 			transformer.go(from, to)
 			.then(() => {
-				expect( to.bar.eins ).toBe( 1 );
-				expect( to.bar.zwei ).toBe( 2 );
+				expect( to.bar.eins ).to.equal( 1 );
+				expect( to.bar.zwei ).to.equal( 2 );
 
 				done();
 			});
@@ -137,7 +139,7 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.go(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					foo: [{
 						eins: 1,
 						zwei: 2
@@ -174,8 +176,8 @@ describe('bmoor-schema.Transformer', function(){
 					}]
 				};
 
-				expect(to).toEqual(match);
-				expect(res).toEqual(match);
+				expect(to).to.deep.equal(match);
+				expect(res).to.deep.equal(match);
 
 				done();
 			});
@@ -195,7 +197,7 @@ describe('bmoor-schema.Transformer', function(){
 
 			transformer.go(from, to)
 			.then(() => {
-				expect(to).toEqual({
+				expect(to).to.deep.equal({
 					foo: [1, 2]
 				});
 
@@ -268,7 +270,7 @@ describe('bmoor-schema.Transformer', function(){
 						children: {}
 					}
 				}
-			}).toEqual(t);
+			}).to.deep.equal(t);
 		});
 	});
 	/*
@@ -286,7 +288,7 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping( 'foo[]', 'test[]' );
 			transformer.go( to, from );
 			
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				'hello',
 				'world'
 			]);
@@ -305,7 +307,7 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping( 'foo[]value', 'test[]' );
 			transformer.go( to, from );
 			
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				{value:'hello'},
 				{value:'world'}
 			]);
@@ -324,7 +326,7 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping( 'foo[]', 'test[]value' );
 			transformer.go( to, from );
 			
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				'hello',
 				'world'
 			]);
@@ -344,7 +346,7 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping( 'foo[]hello.world', 'test[]doop' );
 			transformer.go( to, from );
 			
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				{ 
 					bar: 'hello',
 					hello: {
@@ -383,7 +385,7 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping( 'foo[]bar[]', 'test[]foo[]bar' );
 			transformer.go( to, from );
 			
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				{ 
 					bar: [
 						1,
@@ -420,7 +422,7 @@ describe('bmoor-schema.Transformer', function(){
 				};
 			transformer.addMapping( 'foo[][]', 'test[]foo[]bar' );
 			transformer.go( to, from );
-			expect( to.foo ).toEqual([
+			expect( to.foo ).to.deep.equal([
 				[ 1, 2 ],
 				[ 3, 4 ]
 			]);
@@ -447,7 +449,7 @@ describe('bmoor-schema.Transformer', function(){
 				};
 			transformer.addMapping( 'foo[][merge]', 'test[]foo[]bar' );
 			transformer.go( to, from );
-			expect( to.foo ).toEqual([ 1, 2, 3, 4 ]);
+			expect( to.foo ).to.deep.equal([ 1, 2, 3, 4 ]);
 		});
 
 		describe('leading array', function(){
@@ -470,7 +472,7 @@ describe('bmoor-schema.Transformer', function(){
 					];
 				transformer.addMapping( '[][]', '[]foo[]bar' );
 				transformer.go( to, from );
-				expect( to ).toEqual([
+				expect( to ).to.deep.equal([
 					[ 1, 2 ],
 					[ 3, 4 ]
 				]);
@@ -497,7 +499,7 @@ describe('bmoor-schema.Transformer', function(){
 					};
 				transformer.addMapping( '[][merge]', 'test[]foo[]bar' );
 				transformer.go( to, from );
-				expect( to ).toEqual([ 1, 2, 3, 4 ]);
+				expect( to ).to.deep.equal([ 1, 2, 3, 4 ]);
 			});
 		});	
 	});

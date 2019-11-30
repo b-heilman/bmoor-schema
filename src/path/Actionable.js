@@ -4,7 +4,7 @@ const makeGetter = require('bmoor').makeGetter;
 const Path = require('../Path.js').default;
 const AccessList = require('./AccessList.js').default;
 
-class Action{
+class Actionable{
 	constructor(accessor){
 		if (accessor instanceof Path){
 			accessor = accessor.tokenizer.getAccessList();
@@ -98,6 +98,6 @@ class Action{
 }
 
 module.exports = {
-	Action,
-	default: Action
+	Actionable,
+	default: Actionable
 };

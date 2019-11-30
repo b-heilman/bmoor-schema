@@ -1,3 +1,6 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema.encode.jsonSchema', function(){
 	var encode = require('./jsonSchema.js').default;
 
@@ -50,7 +53,7 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 			}
 		];
 
-		expect( encode(fields) ).toEqual({
+		expect( encode(fields) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			'type':'object',
 			'required':[],
@@ -202,7 +205,7 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 			}
 		];
 
-		expect( encode(fields) ).toEqual({
+		expect( encode(fields) ).to.deep.equal({
 			'$schema':'http://json-schema.org/schema#',
 			'type':'object',
 			'required':[],

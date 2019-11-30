@@ -1,3 +1,6 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema::Path', function(){
 	var Path = require('./Path.js').default;
 
@@ -8,10 +11,10 @@ describe('bmoor-schema::Path', function(){
 			};
 
 		expect( (new Path('world')).flatten( obj ) )
-			.toEqual([43110]);
+			.to.deep.equal([43110]);
 
 		expect( (new Path('foo')).flatten( obj ) )
-			.toEqual(['bar']);
+			.to.deep.equal(['bar']);
 	});
 
 	it('should flatten a simple array', function(){
@@ -23,7 +26,7 @@ describe('bmoor-schema::Path', function(){
 			};
 
 		expect( (new Path('eins[]')).flatten( obj ) )
-			.toEqual(['foo','bar']);
+			.to.deep.equal(['foo','bar']);
 	});
 
 	it('should flatten properties of a simple array', function(){
@@ -35,7 +38,7 @@ describe('bmoor-schema::Path', function(){
 			};
 
 		expect( (new Path('eins[].zwei')).flatten( obj ) )
-			.toEqual(['foo','bar']);
+			.to.deep.equal(['foo','bar']);
 	});
 
 	it('should flatten properties of multiple arrays', function(){
@@ -51,7 +54,7 @@ describe('bmoor-schema::Path', function(){
 			};
 
 		expect( (new Path('eins[].zwei[]')).flatten( obj ) )
-			.toEqual(['foo','bar']);
+			.to.deep.equal(['foo','bar']);
 	});
 
 	it('should execute a functiona against properties of multiple arrays', function(){
@@ -74,6 +77,6 @@ describe('bmoor-schema::Path', function(){
 
 		( new Path('eins[].zwei[].value') ).exec( obj, fn );
 
-		expect( sum ).toBe( 10 );
+		expect( sum ).to.equal( 10 );
 	});
 });

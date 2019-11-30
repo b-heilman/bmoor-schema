@@ -1,4 +1,6 @@
 
+const {expect} = require('chai');
+
 const Path = require('../Path.js').default;
 const Reader = require('./Reader.js').default;
 
@@ -13,13 +15,13 @@ describe('path/Reader.js', function(){
 				foo: {
 					bar: '1'
 				}
-			})).toBe('1');
+			})).to.equal('1');
 
 			expect(reader.get({
 				foo: {
 					bar: ['1']
 				}
-			})).toEqual(['1']);
+			})).to.deep.equal(['1']);
 		});
 	});
 
@@ -31,19 +33,19 @@ describe('path/Reader.js', function(){
 
 			let readers = reader.addChild(accessors.getFollowing());
 
-			expect(readers.length).toBe(2);
+			expect(readers.length).to.equal(2);
 
 			expect(readers[0].get({
 				foo: [{
 					bar: '1'
 				}]
-			})).toEqual([{
+			})).to.deep.equal([{
 				bar: '1'
 			}]);
 
 			expect(readers[1].get({
 				bar: '1'
-			})).toEqual('1');
+			})).to.deep.equal('1');
 		});
 	});
 });

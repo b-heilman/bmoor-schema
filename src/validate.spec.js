@@ -1,5 +1,8 @@
+
+const {expect} = require('chai');
+
 describe('bmoor-schema::validate', function(){
-	var validate = require('./validate.js').default;
+	const {validate} = require('./validate.js');
 
 	it('return null with no errors', function(){
 		var schema = [{
@@ -18,7 +21,7 @@ describe('bmoor-schema::validate', function(){
 				foo: 'bar'
 			};
 
-		expect( validate(schema,obj) ).toEqual( null );
+		expect( validate(schema,obj) ).to.deep.equal( null );
 	});
 
 	it('return an array of errors', function(){
@@ -39,7 +42,7 @@ describe('bmoor-schema::validate', function(){
 			},
 			rtn = validate(schema,obj);
 
-		expect( rtn ).toEqual([
+		expect( rtn ).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'type',
@@ -81,7 +84,7 @@ describe('bmoor-schema::validate', function(){
 			},
 			rtn = validate(schema,obj);
 
-		expect( rtn ).toEqual( null );
+		expect( rtn ).to.deep.equal( null );
 	});
 
 	it('should error with arrays', function(){
@@ -110,7 +113,7 @@ describe('bmoor-schema::validate', function(){
 			},
 			rtn = validate(schema,obj);
 
-		expect( rtn ).toEqual([
+		expect( rtn ).to.deep.equal([
 			{
 				path: 'eins[].value',
 				type: 'type',
@@ -150,7 +153,7 @@ describe('bmoor-schema::validate', function(){
 			},
 			rtn = validate(schema,obj);
 
-		expect( rtn ).toEqual([
+		expect( rtn ).to.deep.equal([
 			{
 				path: 'eins[].value',
 				type: 'missing',
@@ -189,7 +192,7 @@ describe('bmoor-schema::validate', function(){
 			},
 			rtn = validate(schema,obj);
 
-		expect( rtn ).toEqual([
+		expect( rtn ).to.deep.equal([
 			{
 				path: 'foo[]',
 				type: 'type',
