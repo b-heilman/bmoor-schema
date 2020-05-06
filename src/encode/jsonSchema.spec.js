@@ -146,6 +146,15 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 	it('should parse correctly using fieldEncode.encode - mixed types', function() { 
 		var fields = [
 			{ 
+				path: 'assign', 
+				type: 'number', 
+				sensitivity: 'none', 
+				encrypted: 0,
+				assign: {
+					minimum: 0
+				}
+			},
+			{ 
 				path: 'attributes.hostname', 
 				type: 'string', 
 				sensitivity: 'none', 
@@ -210,6 +219,10 @@ describe('bmoor-schema.encode.jsonSchema', function(){
 			'type':'object',
 			'required':[],
 			'properties':{
+				'assign': {
+					type:['number','null'],
+					minimum: 0
+				},
 				'attributes':{
 					type:['object','null'],
 					required:[],

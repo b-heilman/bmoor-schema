@@ -22,6 +22,10 @@ function buildLeaf(info, token, prior){
 		t.encrypted = true;
 	}
 
+	if (info.assign){
+		Object.assign(t, info.assign);
+	}
+
 	return t;
 }
 
