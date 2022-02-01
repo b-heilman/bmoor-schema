@@ -14,7 +14,7 @@
     "build": "gulp build"
   },
   "dependencies": {
-    "bmoor": "~0.8.0"
+    "bmoor": "~0.10.1"
   },
   "devDependencies": {
     "bmoor-gulp": "^0.1.0",
