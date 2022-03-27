@@ -1,20 +1,19 @@
-
 const {expect} = require('chai');
 
-describe('bmoor-schema::schema', function(){
+describe('bmoor-schema::schema', function () {
 	var bmoorSchema = require('../bmoor-schema.js'),
 		encoding = bmoorSchema.encode,
 		encode = encoding.bmoorSchema,
 		translate = encoding.jsonSchema;
 
-	it('should encode a basic object correctly', function(){
+	it('should encode a basic object correctly', function () {
 		var info = encode({
-				eins: 1,
-				zwei: true,
-				drei: 'hello'
-			});
+			eins: 1,
+			zwei: true,
+			drei: 'hello'
+		});
 
-		expect( info ).to.deep.equal([
+		expect(info).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -32,19 +31,19 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).to.deep.equal({
-			'$schema':'http://json-schema.org/schema#',
+		expect(translate(info)).to.deep.equal({
+			$schema: 'http://json-schema.org/schema#',
 			type: 'object',
-			required:[],
+			required: [],
 			properties: {
 				eins: {
-					type: ['number','null']
+					type: ['number', 'null']
 				},
 				zwei: {
-					type: ['boolean','null']
+					type: ['boolean', 'null']
 				},
 				drei: {
-					type: ['string','null']
+					type: ['string', 'null']
 				}
 			}
 		});
@@ -54,40 +53,40 @@ describe('bmoor-schema::schema', function(){
 
 		info[2].path = 'drei';
 
-		expect( translate(info) ).to.deep.equal({
-			'$schema':'http://json-schema.org/schema#',
+		expect(translate(info)).to.deep.equal({
+			$schema: 'http://json-schema.org/schema#',
 			type: 'object',
-			required:[],
+			required: [],
 			properties: {
 				test: {
-					type: ['object','null'],
+					type: ['object', 'null'],
 					required: [],
 					properties: {
 						eins: {
-							type: ['number','null']
+							type: ['number', 'null']
 						},
 						zwei: {
-							type: ['boolean','null']
+							type: ['boolean', 'null']
 						}
 					}
 				},
 				drei: {
-					type: ['string','null']
+					type: ['string', 'null']
 				}
 			}
 		});
 	});
 
-	it('should encode a multi level object correctly', function(){
+	it('should encode a multi level object correctly', function () {
 		var info = encode({
-				eins: 1,
-				foo: {
-					zwei: true,
-					drei: 'hello'
-				}
-			});
+			eins: 1,
+			foo: {
+				zwei: true,
+				drei: 'hello'
+			}
+		});
 
-		expect( info ).to.deep.equal([
+		expect(info).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -105,23 +104,23 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).to.deep.equal({
-			'$schema':'http://json-schema.org/schema#',
+		expect(translate(info)).to.deep.equal({
+			$schema: 'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],
 			properties: {
 				eins: {
-					type: ['number','null']
+					type: ['number', 'null']
 				},
 				foo: {
-					type: ['object','null'],
+					type: ['object', 'null'],
 					required: [],
 					properties: {
 						zwei: {
-							type: ['boolean','null']
+							type: ['boolean', 'null']
 						},
 						drei: {
-							type: ['string','null']
+							type: ['string', 'null']
 						}
 					}
 				}
@@ -129,16 +128,18 @@ describe('bmoor-schema::schema', function(){
 		});
 	});
 
-	it('should encode an array inside an object correctly', function(){
+	it('should encode an array inside an object correctly', function () {
 		var info = encode({
-				eins: 1,
-				foo: [{
+			eins: 1,
+			foo: [
+				{
 					zwei: true,
 					drei: 'hello'
-				}]
-			});
+				}
+			]
+		});
 
-		expect( info ).to.deep.equal([
+		expect(info).to.deep.equal([
 			{
 				path: 'eins',
 				type: 'number',
@@ -156,25 +157,25 @@ describe('bmoor-schema::schema', function(){
 			}
 		]);
 
-		expect( translate(info) ).to.deep.equal({
-			'$schema':'http://json-schema.org/schema#',
+		expect(translate(info)).to.deep.equal({
+			$schema: 'http://json-schema.org/schema#',
 			type: 'object',
 			required: [],
 			properties: {
 				eins: {
-					type: ['number','null']
+					type: ['number', 'null']
 				},
 				foo: {
-					type: ['array','null'],
+					type: ['array', 'null'],
 					items: {
-						type: ['object','null'],
+						type: ['object', 'null'],
 						required: [],
 						properties: {
 							zwei: {
-								type: ['boolean','null']
+								type: ['boolean', 'null']
 							},
 							drei: {
-								type: ['string','null']
+								type: ['string', 'null']
 							}
 						}
 					}

@@ -1,17 +1,16 @@
-
 const {expect} = require('chai');
 
 const Path = require('../Path.js').default;
 const Writer = require('./Writer.js').default;
 
-describe('path/Writer.js', function(){
-	describe('simple path', function(){
-		it('should #go correctly', function(){
+describe('path/Writer.js', function () {
+	describe('simple path', function () {
+		it('should #go correctly', function () {
 			let path = new Path('foo.bar');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.setAction(function(){
+			writer.setAction(function () {
 				return 'hello world';
 			});
 
@@ -27,21 +26,21 @@ describe('path/Writer.js', function(){
 		});
 	});
 
-	describe('single array paths', function(){
-		it('should #go correctly', function(){
+	describe('single array paths', function () {
+		it('should #go correctly', function () {
 			let path = new Path('foo[].bar1');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.addChild(accessors.getFollowing(), function(){
+			writer.addChild(accessors.getFollowing(), function () {
 				return 'hello world';
 			});
 
-			writer.addPath(new Path('foo[].bar2'), function(){
+			writer.addPath(new Path('foo[].bar2'), function () {
 				return 'zwei';
 			});
 
-			writer.addPath(new Path('foo[].bar3'), function(){
+			writer.addPath(new Path('foo[].bar3'), function () {
 				return 'drei';
 			});
 
@@ -50,32 +49,34 @@ describe('path/Writer.js', function(){
 			writer.go(target);
 
 			expect(target).to.deep.equal({
-				foo: [{
-					bar1: 'hello world',
-					bar2: 'zwei',
-					bar3: 'drei'
-				}]
+				foo: [
+					{
+						bar1: 'hello world',
+						bar2: 'zwei',
+						bar3: 'drei'
+					}
+				]
 			});
 		});
 
-		it('should #go allow configuration of array', function(){
+		it('should #go allow configuration of array', function () {
 			let path = new Path('foo[]');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.setGenerator(function(){
-				return [{},{}];
+			writer.setGenerator(function () {
+				return [{}, {}];
 			});
 
-			writer.addPath(new Path('foo[].bar1'), function(){
+			writer.addPath(new Path('foo[].bar1'), function () {
 				return 'eins';
 			});
 
-			writer.addPath(new Path('foo[].bar2'), function(){
+			writer.addPath(new Path('foo[].bar2'), function () {
 				return 'zwei';
 			});
 
-			writer.addPath(new Path('foo[].bar3'), function(){
+			writer.addPath(new Path('foo[].bar3'), function () {
 				return 'drei';
 			});
 
@@ -84,34 +85,37 @@ describe('path/Writer.js', function(){
 			writer.go(target);
 
 			expect(target).to.deep.equal({
-				foo: [{
-					bar1: 'eins',
-					bar2: 'zwei',
-					bar3: 'drei'
-				},{
-					bar1: 'eins',
-					bar2: 'zwei',
-					bar3: 'drei'
-				}]
+				foo: [
+					{
+						bar1: 'eins',
+						bar2: 'zwei',
+						bar3: 'drei'
+					},
+					{
+						bar1: 'eins',
+						bar2: 'zwei',
+						bar3: 'drei'
+					}
+				]
 			});
 		});
 	});
 
-	describe('multi array paths', function(){
-		it('should #go correctly', function(){
+	describe('multi array paths', function () {
+		it('should #go correctly', function () {
 			let path = new Path('foo[].bar1');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.addChild(accessors.getFollowing(), function(){
+			writer.addChild(accessors.getFollowing(), function () {
 				return 'hello world';
 			});
 
-			writer.addPath(new Path('foo[].bar[].eins'), function(){
+			writer.addPath(new Path('foo[].bar[].eins'), function () {
 				return 'eins';
 			});
 
-			writer.addPath(new Path('foo[].bar[].zwei'), function(){
+			writer.addPath(new Path('foo[].bar[].zwei'), function () {
 				return 'zwei';
 			});
 
@@ -120,32 +124,36 @@ describe('path/Writer.js', function(){
 			writer.go(target);
 
 			expect(target).to.deep.equal({
-				foo: [{
-					bar1: 'hello world',
-					bar: [{
-						eins: 'eins',
-						zwei: 'zwei'
-					}]
-				}]
+				foo: [
+					{
+						bar1: 'hello world',
+						bar: [
+							{
+								eins: 'eins',
+								zwei: 'zwei'
+							}
+						]
+					}
+				]
 			});
 		});
 	});
 
-	describe('multi array paths', function(){
-		it('should #go correctly', function(){
+	describe('multi array paths', function () {
+		it('should #go correctly', function () {
 			let path = new Path('foo[].bar1');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.addChild(accessors.getFollowing(), function(){
+			writer.addChild(accessors.getFollowing(), function () {
 				return 'hello world';
 			});
 
-			writer.addPath(new Path('foo[].bar[].eins'), function(){
+			writer.addPath(new Path('foo[].bar[].eins'), function () {
 				return 'eins';
 			});
 
-			writer.addPath(new Path('foo[].bar[].zwei'), function(){
+			writer.addPath(new Path('foo[].bar[].zwei'), function () {
 				return 'zwei';
 			});
 
@@ -154,32 +162,36 @@ describe('path/Writer.js', function(){
 			writer.go(target);
 
 			expect(target).to.deep.equal({
-				foo: [{
-					bar1: 'hello world',
-					bar: [{
-						eins: 'eins',
-						zwei: 'zwei'
-					}]
-				}]
+				foo: [
+					{
+						bar1: 'hello world',
+						bar: [
+							{
+								eins: 'eins',
+								zwei: 'zwei'
+							}
+						]
+					}
+				]
 			});
 		});
 	});
 
-	describe('with actions', function(){
-		it('should #go correctly', function(){
+	describe('with actions', function () {
+		it('should #go correctly', function () {
 			let path = new Path('foo[].bar1');
 			let accessors = path.tokenizer.getAccessList();
 			let writer = new Writer(accessors.getFront());
 
-			writer.addChild(accessors.getFollowing(), function(){
+			writer.addChild(accessors.getFollowing(), function () {
 				return 'hello world';
 			});
 
-			writer.addPath(new Path('foo[]#sub.bar[].eins'), function(){
+			writer.addPath(new Path('foo[]#sub.bar[].eins'), function () {
 				return 'eins';
 			});
 
-			writer.addPath(new Path('foo[]#sub.bar[].zwei'), function(){
+			writer.addPath(new Path('foo[]#sub.bar[].zwei'), function () {
 				return 'zwei';
 			});
 
@@ -187,11 +199,11 @@ describe('path/Writer.js', function(){
 			const classes = {};
 
 			writer.go(target, {
-				runAction(action, parent){
+				runAction(action, parent) {
 					let cls = classes[action];
 					let rtn = null;
-					
-					if (!cls){
+
+					if (!cls) {
 						cls = [];
 						classes[action] = cls;
 					}
@@ -207,21 +219,27 @@ describe('path/Writer.js', function(){
 			});
 
 			expect(target).to.deep.equal({
-				foo: [{
-					bar1: 'hello world'
-				}]
+				foo: [
+					{
+						bar1: 'hello world'
+					}
+				]
 			});
 
 			expect(classes).to.deep.equal({
-				sub: [{
-					parent: {
-						bar1: 'hello world'
-					},
-					bar: [{
-						eins: 'eins',
-						zwei: 'zwei'
-					}]
-				}]
+				sub: [
+					{
+						parent: {
+							bar1: 'hello world'
+						},
+						bar: [
+							{
+								eins: 'eins',
+								zwei: 'zwei'
+							}
+						]
+					}
+				]
 			});
 		});
 	});

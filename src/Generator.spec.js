@@ -1,32 +1,31 @@
-
 const {expect} = require('chai');
 
 const Generator = require('./Generator.js').default;
 
-describe('Generator.js', function(){
-	it('should #generate with custom methods', function(){
+describe('Generator.js', function () {
+	it('should #generate with custom methods', function () {
 		let generator = new Generator([
 			{
 				path: 'eins',
-				generator: function(){
+				generator: function () {
 					return 'one';
 				}
 			},
 			{
 				path: 'foo.bar',
-				generator: function(){
+				generator: function () {
 					return 'fooBar';
 				}
 			},
 			{
 				path: 'hello[].world1',
-				generator: function(){
+				generator: function () {
 					return 'eins';
 				}
 			},
 			{
 				path: 'hello[].world2',
-				generator: function(){
+				generator: function () {
 					return 'zwei';
 				}
 			}
@@ -37,14 +36,16 @@ describe('Generator.js', function(){
 			foo: {
 				bar: 'fooBar'
 			},
-			hello: [{
-				world1: 'eins',
-				world2: 'zwei'
-			}]
+			hello: [
+				{
+					world1: 'eins',
+					world2: 'zwei'
+				}
+			]
 		});
 	});
 
-	it('should #generate with custom methods', function(){
+	it('should #generate with custom methods', function () {
 		let generator = new Generator([
 			{
 				path: 'eins',
@@ -80,7 +81,7 @@ describe('Generator.js', function(){
 		expect(generated.constant).to.equal('constant');
 	});
 
-	it('should #generate arrays', function(){
+	it('should #generate arrays', function () {
 		let generator = new Generator([
 			{
 				path: 'hello[].world1',
@@ -102,7 +103,7 @@ describe('Generator.js', function(){
 		let generated = generator.generate();
 
 		expect(generated.hello.length).to.equal(3);
-		
+
 		expect(generated.hello[0].world1).to.exist;
 		expect(generated.hello[0].world2).to.exist;
 		expect(generated.hello[1].world1).to.exist;

@@ -1,11 +1,9 @@
-
 const Path = require('../Path.js').default;
 const {Actionable} = require('./Actionable.js');
 
-class Reader extends Actionable {
-}
+class Reader extends Actionable {}
 
-function listFactory(pathStr){
+function listFactory(pathStr) {
 	const path = new Path(pathStr);
 	const accessorList = path.tokenizer.getAccessList();
 	const reader = new Reader(accessorList.getFront());

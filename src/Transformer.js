@@ -1,44 +1,42 @@
-
 const {encode} = require('./encode/bmoorSchema.js');
 const {Mapper} = require('./path/Mapper.js');
 const {Tokenizer} = require('./path/Tokenizer.js');
 
 class Transformer {
-	constructor(transformations = []){
+	constructor(transformations = []) {
 		this.mapper = new Mapper(transformations);
 	}
 
-	addMapping(from, to){
+	addMapping(from, to) {
 		this.mapper.addPairing(from, to);
 	}
 
-	go(from, to = {}, ops = {}){
-		return this.mapper.go(from, to, ops)
-		.then(() => to);
+	go(from, to = {}, ops = {}) {
+		return this.mapper.go(from, to, ops).then(() => to);
 	}
 }
 
 module.exports = {
-	template: function(obj){
+	template: function (obj) {
 		const root = {
 			properties: [],
 			children: {}
 		};
 		const encoded = encode(obj);
 
-		encoded.forEach(p => {
+		encoded.forEach((p) => {
 			let tokenized = new Tokenizer(p.path);
 			let chunks = tokenized.chunk();
 
 			let r = root;
-			while(chunks.length){
+			while (chunks.length) {
 				let chunk = chunks.shift();
 
-				if (chunk.type !== 'linear'){
-					if (chunks.length){
+				if (chunk.type !== 'linear') {
+					if (chunks.length) {
 						let child = r.children[chunk.path];
 
-						if (!child){
+						if (!child) {
 							child = {
 								properties: [],
 								children: {}

@@ -1,13 +1,13 @@
-
 class Accessor {
-	constructor(access){
-		if (!access.action && !access.path){
+	constructor(access) {
+		if (!access.action && !access.path) {
 			this.ref = null;
 		} else {
-			this.ref = (access.action ? access.action+'#' : '') + 
+			this.ref =
+				(access.action ? access.action + '#' : '') +
 				(access.path ? access.path.join('.') : '');
 		}
-		
+
 		this.access = access;
 	}
 }

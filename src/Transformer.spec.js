@@ -1,20 +1,19 @@
-
 const {expect} = require('chai');
 
 const {Transformer, template} = require('./Transformer.js');
 
-describe('bmoor-schema.Transformer', function(){
-	
-	it('should be defined', function(){
-		expect( Transformer ).to.exist;
+describe('bmoor-schema.Transformer', function () {
+	it('should be defined', function () {
+		expect(Transformer).to.exist;
 	});
 
-	it('should instantiate correctly with an array', function(done){
+	it('should instantiate correctly with an array', function (done) {
 		const transformer = new Transformer([
-			{ 
+			{
 				from: 'bar',
 				to: 'foo'
-			}, { 
+			},
+			{
 				to: 'eins',
 				from: 'zwei'
 			}
@@ -25,37 +24,35 @@ describe('bmoor-schema.Transformer', function(){
 			zwei: 2
 		};
 
-		transformer.go(from, to)
-		.then(() => {
-			expect( to.foo ).to.equal( 1 );
-			expect( to.eins ).to.equal( 2 );
+		transformer.go(from, to).then(() => {
+			expect(to.foo).to.equal(1);
+			expect(to.eins).to.equal(2);
 
 			done();
 		});
 	});
 
-	it('should run correctly with delayed routes', function(done){
+	it('should run correctly with delayed routes', function (done) {
 		var transformer = new Transformer(),
 			to = {},
 			from = {
 				bar: 1,
 				zwei: 2
 			};
-		
+
 		transformer.addMapping('bar', 'foo');
 		transformer.addMapping('zwei', 'eins');
 
-		transformer.go(from, to)
-		.then(() => {
-			expect( to.foo ).to.equal( 1 );
-			expect( to.eins ).to.equal( 2 );
+		transformer.go(from, to).then(() => {
+			expect(to.foo).to.equal(1);
+			expect(to.eins).to.equal(2);
 
 			done();
 		});
 	});
 
-	describe('multi tiered routes', function(){
-		it('should work on the from', function(done){
+	describe('multi tiered routes', function () {
+		it('should work on the from', function (done) {
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -65,19 +62,18 @@ describe('bmoor-schema.Transformer', function(){
 					}
 				};
 
-			transformer.addMapping('foo.bar',  'eins');
+			transformer.addMapping('foo.bar', 'eins');
 			transformer.addMapping('foo.hello', 'zwei');
 
-			transformer.go(from, to)
-			.then(() => {
-				expect(to.eins).to.equal( 1 );
-				expect(to.zwei).to.equal( 2 );
+			transformer.go(from, to).then(() => {
+				expect(to.eins).to.equal(1);
+				expect(to.zwei).to.equal(2);
 
 				done();
 			});
 		});
 
-		it('should work on the to', function(done){
+		it('should work on the to', function (done) {
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -88,16 +84,15 @@ describe('bmoor-schema.Transformer', function(){
 			transformer.addMapping('foo', 'foo.eins');
 			transformer.addMapping('bar', 'foo.zwei');
 
-			transformer.go(from, to)
-			.then(function(){
-				expect(to.foo.eins).to.equal( 1 );
-				expect(to.foo.zwei).to.equal( 2 );
+			transformer.go(from, to).then(function () {
+				expect(to.foo.eins).to.equal(1);
+				expect(to.foo.zwei).to.equal(2);
 
 				done();
 			});
 		});
 
-		it('should copy over objects, not just scalars', function(done){
+		it('should copy over objects, not just scalars', function (done) {
 			var transformer = new Transformer(),
 				to = {},
 				from = {
@@ -108,51 +103,54 @@ describe('bmoor-schema.Transformer', function(){
 				};
 
 			transformer.addMapping('foo', 'bar');
-			transformer.go(from, to)
-			.then(() => {
-				expect( to.bar.eins ).to.equal( 1 );
-				expect( to.bar.zwei ).to.equal( 2 );
+			transformer.go(from, to).then(() => {
+				expect(to.bar.eins).to.equal(1);
+				expect(to.bar.zwei).to.equal(2);
 
 				done();
 			});
 		});
 	});
 
-	describe('with arrays', function(){
-		it('should convert an array', function(done){
+	describe('with arrays', function () {
+		it('should convert an array', function (done) {
 			const transformer = new Transformer([
-				{ 
+				{
 					from: 'bar[].uno',
 					to: 'foo[].eins'
-				}, { 
+				},
+				{
 					from: 'bar[].dos',
 					to: 'foo[].zwei'
 				}
 			]);
 			const to = {};
 			const from = {
-				bar: [{
-					uno: 1,
-					dos: 2
-				}]
+				bar: [
+					{
+						uno: 1,
+						dos: 2
+					}
+				]
 			};
 
-			transformer.go(from, to)
-			.then(() => {
+			transformer.go(from, to).then(() => {
 				expect(to).to.deep.equal({
-					foo: [{
-						eins: 1,
-						zwei: 2
-					}]
+					foo: [
+						{
+							eins: 1,
+							zwei: 2
+						}
+					]
 				});
 
 				done();
 			});
 		});
 
-		it('should allow flat to normalized', function(done){
+		it('should allow flat to normalized', function (done) {
 			const transformer = new Transformer([
-				{ 
+				{
 					from: 'bar[]',
 					to: 'foo[].eins.zwei'
 				}
@@ -162,18 +160,20 @@ describe('bmoor-schema.Transformer', function(){
 				bar: [1, 2]
 			};
 
-			transformer.go(from, to)
-			.then(res => {
+			transformer.go(from, to).then((res) => {
 				const match = {
-					foo: [{
-						eins: {
-							zwei: 1
+					foo: [
+						{
+							eins: {
+								zwei: 1
+							}
+						},
+						{
+							eins: {
+								zwei: 2
+							}
 						}
-					},{
-						eins: {
-							zwei: 2
-						}
-					}]
+					]
 				};
 
 				expect(to).to.deep.equal(match);
@@ -183,9 +183,9 @@ describe('bmoor-schema.Transformer', function(){
 			});
 		});
 
-		it('should allow flat to flat', function(done){
+		it('should allow flat to flat', function (done) {
 			const transformer = new Transformer([
-				{ 
+				{
 					from: 'bar[]',
 					to: 'foo[]'
 				}
@@ -195,8 +195,7 @@ describe('bmoor-schema.Transformer', function(){
 				bar: [1, 2]
 			};
 
-			transformer.go(from, to)
-			.then(() => {
+			transformer.go(from, to).then(() => {
 				expect(to).to.deep.equal({
 					foo: [1, 2]
 				});
@@ -206,62 +205,75 @@ describe('bmoor-schema.Transformer', function(){
 		});
 	});
 
-	describe('::template', function(){
-		it('should work', function(){
+	describe('::template', function () {
+		it('should work', function () {
 			const t = template({
 				person: {
 					fname: 'Brian',
 					lname: 'Halloman'
 				},
-				tools: [{
-					name: 'ok',
-					sublist: [{
-						foo: 'bar'
-					}]
-				}],
-				properties: [{
-					path: 'foo.bar',
-					something: 'orOther'
-				}],
-				strings: [
-					'foo',
-					'bar'
-				]
+				tools: [
+					{
+						name: 'ok',
+						sublist: [
+							{
+								foo: 'bar'
+							}
+						]
+					}
+				],
+				properties: [
+					{
+						path: 'foo.bar',
+						something: 'orOther'
+					}
+				],
+				strings: ['foo', 'bar']
 			});
 
 			expect({
-				'properties': [{
-					path: 'person.fname',
-					value: 'Brian'
-				},{
-					path: 'person.lname',
-					value: 'Halloman'
-				}],
-				'children': {
+				properties: [
+					{
+						path: 'person.fname',
+						value: 'Brian'
+					},
+					{
+						path: 'person.lname',
+						value: 'Halloman'
+					}
+				],
+				children: {
 					'tools[]': {
-						'properties': [{
-							path: 'tools[].name',
-							value: 'ok'
-						}],
-						'children': {
+						properties: [
+							{
+								path: 'tools[].name',
+								value: 'ok'
+							}
+						],
+						children: {
 							'sublist[]': {
-								'properties': [{
-									path: 'tools[].sublist[].foo',
-									value: 'bar'
-								}],
-								'children': {}
+								properties: [
+									{
+										path: 'tools[].sublist[].foo',
+										value: 'bar'
+									}
+								],
+								children: {}
 							}
 						}
 					},
 					'properties[]': {
-						'properties': [{
-							path: 'properties[].path',
-							value: 'foo.bar'
-						}, {
-							path: 'properties[].something',
-							value: 'orOther'
-						}],
-						'children': {}
+						properties: [
+							{
+								path: 'properties[].path',
+								value: 'foo.bar'
+							},
+							{
+								path: 'properties[].something',
+								value: 'orOther'
+							}
+						],
+						children: {}
 					},
 					'strings[]': {
 						path: 'strings[]',
